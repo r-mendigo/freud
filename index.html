@@ -1956,6 +1956,11 @@ About Susci:
         status.textContent = "Freud kept your starred messages safe ⭐";
       };
 
+      // restore previous chat after reload
+      if (chatHistory.length > 0) {
+        renderAllMessages();
+      }
+
       renderWelcomeIfNeeded();
       warmEngineLazy();
     </script>
