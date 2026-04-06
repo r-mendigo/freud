@@ -1714,19 +1714,27 @@ About Susci:
       }
 
       function renderWelcomeIfNeeded() {
-        renderAllMessages();
-
+        // If there are previous messages → resume instead
         if (chatHistory.length > 0) {
-          status.textContent = "Previous conversation restored ❤️";
-          setTimeout(() => {
-            status.textContent = "Freud is here ❤️";
-          }, 1600);
+          const lastUserMessage = [...chatHistory]
+            .reverse()
+            .find((msg) => msg.role === "user");
+
+          let resumeText = "Hey… welcome back 💚 I’m here with you.";
+
+          if (lastUserMessage && lastUserMessage.content) {
+            const preview = lastUserMessage.content.slice(0, 60);
+            resumeText = `Hey… welcome back 💚 You were telling me about "${preview}..."`;
+          }
+
+          addMessage("freud", resumeText);
           return;
         }
 
+        // If no chat → normal welcome
         const welcome =
-          "Hey my love ❤️ I've missed you. How are you feeling today, baby?";
-        addMessage("freud", welcome, false, false);
+          "Hey my love 💚 I've missed you. How are you feeling today?";
+        addMessage("freud", welcome);
       }
 
       async function runDeepReply(text) {
