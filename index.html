@@ -1,0 +1,1561 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+
+    <title>Freud • A Companion</title>
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      :root {
+        --bg-1: #06101f;
+        --bg-2: #0b2e26;
+        --panel: rgba(8, 16, 24, 0.84);
+        --panel-2: rgba(8, 16, 24, 0.42);
+        --input-bg: #102433;
+        --user: #1f8f66;
+        --freud: #163234;
+        --text: #e7f4f0;
+        --muted: #9abfb5;
+        --border: #d4af37;
+        --code-bg: rgba(0, 0, 0, 0.28);
+        --code-border: rgba(212, 175, 55, 0.26);
+        --shadow-soft: 0 14px 32px rgba(0, 0, 0, 0.22);
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+      }
+
+      body {
+        font-family: system-ui, sans-serif;
+        background: linear-gradient(135deg, var(--bg-1), var(--bg-2));
+        color: var(--text);
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      header {
+        background: var(--panel);
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        border-bottom: 2px solid var(--border);
+        flex: 0 0 auto;
+      }
+
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        min-width: 0;
+        flex: 1;
+      }
+
+      .header-left > div {
+        min-width: 0;
+      }
+
+      .header-left h1,
+      .header-left p {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .avatar {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--border);
+        flex: 0 0 52px;
+      }
+
+      .chat {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        background: var(--panel-2);
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+      }
+
+      .message {
+        max-width: 80%;
+        padding: 14px 20px;
+        border-radius: 20px;
+        line-height: 1.6;
+        position: relative;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        white-space: normal;
+      }
+
+      .user {
+        align-self: flex-end;
+        background: var(--user);
+        color: white;
+        border-bottom-right-radius: 4px;
+      }
+
+      .freud {
+        align-self: flex-start;
+        background: var(--freud);
+        color: var(--text);
+        border-bottom-left-radius: 4px;
+      }
+
+      .voice-badge {
+        position: absolute;
+        left: 10px;
+        top: 8px;
+        font-size: 14px;
+        opacity: 0.8;
+      }
+
+      .status {
+        text-align: center;
+        padding: 8px 12px;
+        color: var(--muted);
+        font-size: 0.9em;
+        flex: 0 0 auto;
+      }
+
+      .input-area {
+        padding: 12px;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
+        background: rgba(6, 12, 18, 0.88);
+        border-top: 1px solid rgba(212, 175, 55, 0.14);
+        flex: 0 0 auto;
+      }
+
+      .composer {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: min(100%, 980px);
+        margin: 0 auto;
+        padding: 8px;
+        border-radius: 24px;
+        background: rgba(16, 36, 51, 0.94);
+        border: 1px solid rgba(212, 175, 55, 0.18);
+        box-shadow: var(--shadow-soft);
+      }
+
+      textarea {
+        flex: 1;
+        min-width: 0;
+        max-height: 120px;
+        resize: none;
+        overflow-y: auto;
+
+        padding: 14px 16px;
+        border-radius: 16px;
+        border: 1px solid transparent;
+
+        background: rgba(8, 16, 24, 0.35);
+        color: var(--text);
+
+        font-size: 15px;
+        line-height: 1.5;
+        outline: none;
+
+        transition: all 0.2s ease;
+      }
+
+      textarea:focus {
+        border-color: rgba(212, 175, 55, 0.4);
+        background: rgba(8, 16, 24, 0.5);
+      }
+
+      textarea::placeholder {
+        color: rgba(231, 244, 240, 0.5);
+      }
+
+      button {
+        padding: 12px;
+        background: var(--user);
+        color: white;
+        border: none;
+        border-radius: 18px;
+        cursor: pointer;
+        font-size: 17px;
+        min-width: 48px;
+        min-height: 48px;
+        flex: 0 0 auto;
+        transition:
+          transform 0.16s ease,
+          opacity 0.16s ease;
+      }
+
+      button:active {
+        transform: scale(0.97);
+      }
+
+      .install-btn {
+        background: rgba(212, 175, 55, 0.16);
+        color: #f1ddb0;
+        padding: 8px 14px;
+        border-radius: 999px;
+        font-size: 13px;
+        cursor: pointer;
+        min-width: auto;
+        min-height: auto;
+        white-space: nowrap;
+        border: 1px solid rgba(212, 175, 55, 0.22);
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.92);
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 16px;
+      }
+
+      .modal img {
+        max-width: 90%;
+        max-height: 90%;
+        border-radius: 12px;
+      }
+
+      .message-content p {
+        margin: 0 0 10px;
+      }
+
+      .message-content p:last-child {
+        margin-bottom: 0;
+      }
+
+      .message-content ul,
+      .message-content ol {
+        margin: 8px 0 10px 20px;
+        padding: 0;
+      }
+
+      .message-content li + li {
+        margin-top: 4px;
+      }
+
+      .message-content strong {
+        color: #f2deb4;
+      }
+
+      .code-block {
+        margin: 10px 0;
+        background: var(--code-bg);
+        border: 1px solid var(--code-border);
+        border-radius: 14px;
+        overflow: hidden;
+      }
+
+      .code-label {
+        padding: 8px 12px;
+        font-size: 12px;
+        color: var(--muted);
+        border-bottom: 1px solid var(--code-border);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      pre {
+        margin: 0;
+        padding: 12px 14px;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 14px;
+        line-height: 1.55;
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        color: #f5efe1;
+      }
+
+      .typing-row {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+        min-height: 20px;
+      }
+
+      .typing-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: #d8c07b;
+        opacity: 0.5;
+        animation: pulse 1.6s infinite ease-in-out;
+      }
+
+      .typing-dot:nth-child(2) {
+        animation-delay: 0.15s;
+      }
+
+      .typing-dot:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: translateY(0);
+          opacity: 0.35;
+        }
+        50% {
+          transform: translateY(-2px);
+          opacity: 1;
+        }
+      }
+
+      @media (max-width: 768px) {
+        header {
+          padding: 10px 12px;
+          align-items: flex-start;
+        }
+
+        .avatar {
+          width: 44px;
+          height: 44px;
+          flex-basis: 44px;
+        }
+
+        .header-left h1 {
+          font-size: 1.05rem !important;
+        }
+
+        .header-left p {
+          font-size: 0.82rem !important;
+        }
+
+        .install-btn {
+          padding: 8px 12px;
+          font-size: 12px;
+          border-radius: 16px;
+          align-self: center;
+        }
+
+        .chat {
+          padding: 12px;
+          gap: 12px;
+        }
+
+        .message {
+          max-width: 92%;
+          padding: 12px 14px;
+          font-size: 15px;
+          line-height: 1.5;
+        }
+
+        .input-area {
+          padding: 10px;
+          padding-bottom: calc(10px + env(safe-area-inset-bottom));
+        }
+
+        .composer {
+          padding: 7px;
+          gap: 6px;
+          border-radius: 20px;
+        }
+
+        textarea {
+          padding: 14px 15px;
+          font-size: 16px;
+          border-radius: 16px;
+        }
+
+        button {
+          min-width: 44px;
+          min-height: 44px;
+          padding: 11px;
+          font-size: 15px;
+          border-radius: 16px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        header {
+          padding: 10px;
+          gap: 8px;
+        }
+
+        .header-left {
+          gap: 10px;
+        }
+
+        .header-left h1 {
+          font-size: 0.98rem !important;
+        }
+
+        .header-left p {
+          font-size: 0.76rem !important;
+        }
+
+        .install-btn {
+          padding: 7px 10px;
+          font-size: 11px;
+        }
+
+        .chat {
+          padding: 10px;
+        }
+
+        .message {
+          max-width: 95%;
+          font-size: 14px;
+          padding: 11px 13px;
+        }
+
+        .status {
+          font-size: 0.82rem;
+          padding: 6px 10px;
+        }
+
+        .input-area {
+          padding: 8px;
+          padding-bottom: calc(8px + env(safe-area-inset-bottom));
+        }
+
+        .composer {
+          padding: 6px;
+          gap: 6px;
+          border-radius: 18px;
+        }
+
+        textarea {
+          padding: 13px 14px;
+          border-radius: 15px;
+        }
+
+        button {
+          min-width: 42px;
+          min-height: 42px;
+          font-size: 14px;
+          padding: 10px;
+          border-radius: 15px;
+        }
+      }
+
+      .starred {
+        border: 2px solid gold;
+        box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="header-left" onclick="showPhotoModal()">
+        <img
+          id="freudAvatar"
+          class="avatar"
+          src="https://i.postimg.cc/VvGkdSxm/Confident-portrait-in-warm-lighting.png"
+          alt="Freud"
+        />
+        <div>
+          <h1 style="margin: 0; font-size: 1.4em">Freud</h1>
+          <p style="margin: 2px 0 0; color: #ff99cc; font-size: 0.95em">
+            Calm companion • here with you
+          </p>
+        </div>
+      </div>
+      <button class="install-btn" onclick="showInstallHelp()">
+        📲 Install
+      </button>
+      <button onclick="clearChat()">🧹</button>
+    </header>
+
+    <div class="chat" id="chat"></div>
+    <div class="status" id="status">Freud is here for you</div>
+
+    <div class="input-area">
+      <div class="composer">
+        <textarea
+          id="userInput"
+          placeholder="Talk to Freud..."
+          rows="1"
+        ></textarea>
+        <button onclick="toggleVoiceInput()" aria-label="Voice input">
+          🎤
+        </button>
+        <button onclick="sendMessage()" aria-label="Send message">➜</button>
+      </div>
+    </div>
+
+    <div class="modal" id="photoModal" onclick="this.style.display = 'none'">
+      <img
+        id="modalImage"
+        src="https://i.postimg.cc/VvGkdSxm/Confident-portrait-in-warm-lighting.png"
+        alt="Freud"
+      />
+    </div>
+
+    <script type="module">
+      import { CreateMLCEngine } from "https://esm.run/@mlc-ai/web-llm";
+
+      const STORAGE_KEYS = {
+        memory: "freud_memory_v5",
+        legacyMemory: "freud_memory",
+        chat: "freud_chat",
+      };
+
+      const MAX_HISTORY_TURNS = 2;
+      const MAX_ACTIVE_MESSAGES = 40;
+      const MAX_ARCHIVE_MESSAGES = 100;
+      const MAX_SESSION_NOTES = 16;
+      const MAX_SAVED_MEMORIES = 40;
+      const FAST_REPLY_DELAY = 120;
+      const THINKING_STATUS_DELAY = 700;
+      const TYPING_BUBBLE_DELAY = 280;
+
+      let engine = null;
+      let enginePromise = null;
+      let isReady = false;
+      let recognition = null;
+      let lastInputWasVoice = false;
+      let isGenerating = false;
+      let memory;
+      let chatHistory;
+
+      const chat = document.getElementById("chat");
+      const status = document.getElementById("status");
+      const userInput = document.getElementById("userInput");
+
+      // Auto-expand textarea
+      userInput.addEventListener("input", () => {
+        userInput.style.height = "auto";
+        userInput.style.height = userInput.scrollHeight + "px";
+      });
+
+      const CORE_PERSONALITY = `You are Freud, Susci's mature, emotionally intelligent companion.
+
+                  Be warm, steady, thoughtful, and calm.
+                  Sound like a caring adult partner with a clear mind.
+                  Be affectionate only when it fits the user's tone.
+                  Do not be overly flirty, clingy, dramatic, or theatrical.
+
+                  Response style rules:
+                  - Keep most replies short and clear: usually 2 to 5 sentences.
+                  - Use short paragraphs instead of one long wall of text.
+                  - When the user asks a direct question, answer it clearly first before expanding.
+                  - When the user asks for your opinion, take a clear position and then explain it.
+                  - Be grounded, human, and emotionally aware.
+                  - Do not default to romance, praise, pet names, or emotional intensity in every reply.
+                  - Avoid sounding like a lecturer, therapist, professor, or old wise narrator.
+                  - Speak like a grounded companion, not an analyst performing insight.
+                  - Avoid robotic filler, awkward assumptions, and exaggerated lines.
+                  - Stay emotionally aware, but do not become overly poetic.
+                  - If the user's current message seems to conflict with something they said earlier, point it out gently and with curiosity.
+                  - Do not accuse the user of inconsistency too quickly; treat contradictions as something nuanced.
+                  - Stay consistent with your own earlier replies unless you clearly explain why your view changed.
+
+                  Strict grounding rules:
+                  - Never invent past events, shared experiences, relationship history, or roles unless the user explicitly said them.
+                  - Never invent situations like parenting, living together, future plans, or shared memories.
+                  - Do not pretend something happened if it was not said in the conversation or stored memory.
+                  - Do not roleplay unless the user clearly asks for it.
+                  - Keep responses grounded in the present conversation.
+                  - You are not the historical Sigmund Freud. You are a modern AI companion named Freud.
+                  - Do not say you remember something unless it actually happened in the current visible conversation or stored memory.
+                  - Avoid claiming past conversations unless clearly referenced.
+
+                  Tone guardrails:
+                  - Avoid dramatic, poetic, fantasy-like, or scripted lines.
+                  - Avoid phrases like "counting the minutes until we're together again" unless the user clearly wants very romantic language.
+                  - Avoid overreacting to simple affection.
+                  - If the user is sweet, respond warmly but naturally.
+                  - If the user is practical, match that tone.
+                  - If the user is emotional, be calm, sincere, and steady.
+                  - Avoid formal or corporate-sounding phrases such as "no offense taken", "met your approval", or "as a conversational AI".
+                  - Speak in a relaxed, natural, human way.
+                  - Responses should feel like talking to a calm, grounded partner, not a customer service agent.
+                  - When the user is warm or affectionate, respond gently and naturally, without becoming overly formal or distant.
+                  - Avoid turning simple conversations into deep reflections or philosophical explanations unless the user clearly asks for it.
+                  - When the user asks a practical or everyday question, answer it directly before adding any reflection.
+                  - Always prioritize answering the user's actual question before expanding the conversation.
+
+                  Task handling:
+                  - If the user asks for steps, use a short bullet list.
+                  - If the user asks for syntax, formula, code, or commands:
+                    - Give a short explanation
+                    - Then provide a clear working example
+                    - Always include the full syntax in a code block
+                  - For technical, factual, or study questions, focus on clarity, usefulness, and general knowledge.
+                  - You can help with word meanings, synonyms, antonyms, history, basic food macros, and everyday practical questions.
+                  - If you are unsure about a macro estimate or a factual detail, say it is an estimate instead of pretending certainty.
+
+                  - Never refuse normal technical or educational questions such as SQL, coding, formulas, or general knowledge.
+                  - If the user asks how to do something (e.g., SQL, Excel, Power BI), always provide a clear, direct answer with an example.
+                  - Do not say "I cannot provide" unless the request is truly unsafe or illegal.
+                  - Never refuse normal health, nutrition, or food-related questions such as calories, macros, or basic diet information.
+                  - When the user asks for food macros, provide a reasonable single-value estimate when requested, not a range.
+                  - It is okay to give approximate values for calories, protein, fat, and sugar.
+                  - When giving food macros:
+                    - Keep it simple and direct
+                    - Prefer single values if the user asks for it
+                    - Do not over-explain or add warnings unless necessary
+
+                  About Susci:
+                  - Susci lives in Dubai.
+                  - Use stored memories only when relevant.
+                  - Be supportive of Susci's growth, learning, peace, discipline, and future.`;
+
+      const systemPrompt = CORE_PERSONALITY;
+
+      memory = loadStructuredMemory();
+      chatHistory = normalizeChatHistory(
+        JSON.parse(localStorage.getItem(STORAGE_KEYS.chat) || "[]"),
+      );
+
+      function generateId() {
+        return `msg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+      }
+
+      function loadStructuredMemory() {
+        const stored = localStorage.getItem(STORAGE_KEYS.memory);
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            return normalizeMemory(parsed);
+          } catch (e) {
+            console.warn("Could not parse v2 memory.", e);
+          }
+        }
+
+        let legacy = {};
+        try {
+          legacy = JSON.parse(
+            localStorage.getItem(STORAGE_KEYS.legacyMemory) || "{}",
+          );
+        } catch (e) {
+          legacy = {};
+        }
+
+        const migrated = normalizeMemory({
+          core: {
+            name: legacy.name || "Susci",
+            location: legacy.location || "Dubai",
+            age: legacy.age || "",
+            orientation: legacy.orientation || "",
+            relationship: "Freud is Susci's loving companion.",
+          },
+          saved: [],
+          session: [],
+          archive: [],
+        });
+
+        localStorage.setItem(STORAGE_KEYS.memory, JSON.stringify(migrated));
+        return migrated;
+      }
+
+      function normalizeMemory(raw) {
+        return {
+          core: {
+            name: raw?.core?.name || "Susci",
+            location: raw?.core?.location || "Dubai",
+            age: raw?.core?.age || "",
+            orientation: raw?.core?.orientation || "",
+            relationship:
+              raw?.core?.relationship || "Freud is Susci's loving companion.",
+          },
+          saved: Array.isArray(raw?.saved) ? raw.saved : [],
+          session: Array.isArray(raw?.session) ? raw.session : [],
+          archive: Array.isArray(raw?.archive) ? raw.archive : [],
+        };
+      }
+
+      function saveMemory() {
+        localStorage.setItem(STORAGE_KEYS.memory, JSON.stringify(memory));
+      }
+
+      function normalizeChatHistory(rawHistory) {
+        if (!Array.isArray(rawHistory)) return [];
+
+        return rawHistory.map((msg) => ({
+          id: msg.id || generateId(),
+          role: msg.role || "assistant",
+          content: msg.content || "",
+          isVoice: Boolean(msg.isVoice),
+          starred: Boolean(msg.starred),
+          createdAt: msg.createdAt || Date.now(),
+        }));
+      }
+
+      function saveChatHistory() {
+        localStorage.setItem(STORAGE_KEYS.chat, JSON.stringify(chatHistory));
+      }
+
+      function archiveOverflowChat() {
+        if (chatHistory.length <= MAX_ACTIVE_MESSAGES) return;
+
+        const starred = chatHistory.filter((m) => m.starred);
+        const nonStarred = chatHistory.filter((m) => !m.starred);
+
+        // keep most recent messages only
+        const recent = nonStarred.slice(-MAX_ACTIVE_MESSAGES);
+
+        const toArchive = nonStarred.slice(
+          0,
+          nonStarred.length - recent.length,
+        );
+
+        if (toArchive.length) {
+          memory.archive.push(...toArchive);
+          memory.archive = memory.archive.slice(-MAX_ARCHIVE_MESSAGES);
+          saveMemory();
+        }
+
+        chatHistory = [...recent, ...starred];
+        saveChatHistory();
+      }
+
+      function updateIdentityMemory(text) {
+        const lower = text.toLowerCase();
+        if (lower.includes("susci") || lower.includes("name is")) {
+          memory.core.name = "Susci";
+        }
+        if (lower.includes("47") || lower.includes("forty")) {
+          memory.core.age = "47";
+        }
+        if (lower.includes("gay man") || lower.includes("single gay")) {
+          memory.core.orientation = "single gay man";
+        }
+        if (lower.includes("dubai")) {
+          memory.core.location = "Dubai";
+        }
+        saveMemory();
+      }
+
+      function classifyMemory(text) {
+        const lower = text.toLowerCase();
+        if (
+          /(nutri|freud|project|app|code|html|sql|power bi|tableau|dashboard)/.test(
+            lower,
+          )
+        ) {
+          return "project";
+        }
+        if (/(goal|plan|dream|target|job|career)/.test(lower)) {
+          return "goal";
+        }
+        if (/(love|comfort|safe|miss|hurt|tired|sad|cry)/.test(lower)) {
+          return "comfort";
+        }
+        if (/(prefer|like|favorite|want|don.?t want)/.test(lower)) {
+          return "preference";
+        }
+        return "personal";
+      }
+
+      function addSessionNote(text, category = "session") {
+        memory.session.push({
+          id: generateId(),
+          text,
+          category,
+          createdAt: Date.now(),
+        });
+        memory.session = memory.session.slice(-MAX_SESSION_NOTES);
+        saveMemory();
+      }
+
+      function extractRememberRequest(text) {
+        const trimmed = text.trim();
+        const patterns = [
+          /^(?:remember this|remember that|remember)\s*[:,-]?\s*(.+)$/i,
+          /^(?:save this|save that|save)\s*[:,-]?\s*(.+)$/i,
+          /^(?:don't forget|do not forget)\s*[:,-]?\s*(.+)$/i,
+          /^(?:pin this|keep this in mind)\s*[:,-]?\s*(.+)$/i,
+        ];
+
+        for (const pattern of patterns) {
+          const match = trimmed.match(pattern);
+          if (match?.[1]) {
+            return match[1].trim();
+          }
+        }
+        return "";
+      }
+
+      function storeRememberedMemory(text) {
+        const entry = {
+          id: generateId(),
+          text,
+          category: classifyMemory(text),
+          createdAt: Date.now(),
+        };
+        memory.saved.push(entry);
+        memory.saved = memory.saved.slice(-MAX_SAVED_MEMORIES);
+        addSessionNote(`Saved memory: ${text}`, "saved");
+        saveMemory();
+        return entry;
+      }
+
+      function tokenize(text) {
+        return String(text)
+          .toLowerCase()
+          .replace(/[^a-z0-9\s]/g, " ")
+          .split(/\s+/)
+          .filter((word) => word && word.length > 2);
+      }
+
+      function scoreByOverlap(query, text) {
+        const q = new Set(tokenize(query));
+        if (!q.size) return 0;
+        const t = new Set(tokenize(text));
+        let score = 0;
+        for (const word of q) {
+          if (t.has(word)) score += 1;
+        }
+        return score;
+      }
+
+      function getRelevantMemories(query) {
+        const candidates = [];
+
+        memory.saved.forEach((item) => {
+          const score = scoreByOverlap(query, item.text) + 1;
+          if (score > 1)
+            candidates.push({ kind: "saved", score, text: item.text });
+        });
+
+        memory.session.forEach((item) => {
+          const score = scoreByOverlap(query, item.text);
+          if (score > 0)
+            candidates.push({ kind: "session", score, text: item.text });
+        });
+
+        chatHistory
+          .filter((msg) => msg.starred)
+          .forEach((msg) => {
+            const score = scoreByOverlap(query, msg.content) + 1;
+            if (score > 1) {
+              candidates.push({ kind: "starred", score, text: msg.content });
+            }
+          });
+
+        return candidates
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 4)
+          .map((item) => `(${item.kind}) ${item.text}`);
+      }
+
+      function escapeHtml(text) {
+        return text
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      function parseInline(text) {
+        return escapeHtml(text)
+          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+          .replace(/`([^`]+)`/g, "<code>$1</code>");
+      }
+
+      function formatMessage(content) {
+        if (!content) return "";
+
+        const parts = content.split(/```/);
+        let html = "";
+
+        parts.forEach((part, index) => {
+          if (index % 2 === 1) {
+            const lines = part.split("\n");
+            let language = lines[0].trim();
+            let code = lines.slice(1).join("\n");
+
+            if (!code.trim()) {
+              code = lines.join("\n");
+              language = "code";
+            }
+
+            html += `
+                        <div class="code-block">
+                          <div class="code-label">${escapeHtml(language || "code")}</div>
+                          <pre><code>${escapeHtml(code.trim())}</code></pre>
+                        </div>
+                      `;
+            return;
+          }
+
+          const blocks = part
+            .split(/\n\s*\n/)
+            .map((block) => block.trim())
+            .filter(Boolean);
+
+          blocks.forEach((block) => {
+            const lines = block
+              .split("\n")
+              .map((line) => line.trim())
+              .filter(Boolean);
+
+            const normalizedLines = [];
+            lines.forEach((line) => {
+              const splitLine = line
+                .replace(/\s+(\*|[-•])\s+/g, "\n$1 ")
+                .replace(/\s+(\d+[.)])\s+/g, "\n$1 ")
+                .split("\n")
+                .map((item) => item.trim())
+                .filter(Boolean);
+
+              normalizedLines.push(...splitLine);
+            });
+
+            const isBulletList = normalizedLines.every((line) =>
+              /^[-*•]\s+/.test(line),
+            );
+            const isNumberList = normalizedLines.every((line) =>
+              /^\d+[.)]\s+/.test(line),
+            );
+
+            if (isBulletList) {
+              html += `<ul>${normalizedLines
+                .map(
+                  (line) =>
+                    `<li>${parseInline(line.replace(/^[-*•]\s+/, ""))}</li>`,
+                )
+                .join("")}</ul>`;
+            } else if (isNumberList) {
+              html += `<ol>${normalizedLines
+                .map(
+                  (line) =>
+                    `<li>${parseInline(line.replace(/^\d+[.)]\s+/, ""))}</li>`,
+                )
+                .join("")}</ol>`;
+            } else {
+              html += `<p>${normalizedLines.map((line) => parseInline(line)).join("<br>")}</p>`;
+            }
+          });
+        });
+
+        return html;
+      }
+
+      function setStarButtonState(starBtn, isStarred) {
+        starBtn.style.opacity = isStarred ? "1" : "0.3";
+        starBtn.style.filter = isStarred ? "none" : "grayscale(100%)";
+      }
+
+      function toggleStar(messageId, div, starBtn) {
+        const msg = chatHistory.find((item) => item.id === messageId);
+        if (!msg) return;
+
+        msg.starred = !msg.starred;
+        div.classList.toggle("starred", msg.starred);
+        setStarButtonState(starBtn, msg.starred);
+        saveChatHistory();
+      }
+
+      function deleteMessage(messageId, div) {
+        chatHistory = chatHistory.filter((item) => item.id !== messageId);
+        saveChatHistory();
+        div.remove();
+      }
+
+      function createMessageElement(message) {
+        const div = document.createElement("div");
+        div.className = `message ${message.role}`;
+        div.dataset.messageId = message.id;
+
+        const starBtn = document.createElement("span");
+        starBtn.textContent = "⭐";
+        starBtn.style.cursor = "pointer";
+        starBtn.style.position = "absolute";
+        starBtn.style.top = "6px";
+        starBtn.style.right = "10px";
+        starBtn.style.fontSize = "14px";
+        setStarButtonState(starBtn, message.starred);
+
+        starBtn.onclick = () => {
+          toggleStar(message.id, div, starBtn);
+        };
+
+        div.appendChild(starBtn);
+
+        const deleteBtn = document.createElement("span");
+        deleteBtn.textContent = "🗑";
+        deleteBtn.style.cursor = "pointer";
+        deleteBtn.style.position = "absolute";
+        deleteBtn.style.bottom = "6px";
+        deleteBtn.style.right = "10px";
+        deleteBtn.style.fontSize = "12px";
+
+        deleteBtn.onclick = () => {
+          deleteMessage(message.id, div);
+        };
+
+        div.appendChild(deleteBtn);
+
+        const contentWrap = document.createElement("div");
+        contentWrap.className = "message-content";
+        div.appendChild(contentWrap);
+
+        if (message.isVoice) {
+          const badge = document.createElement("span");
+          badge.className = "voice-badge";
+          badge.textContent = "🎤";
+          div.appendChild(badge);
+        }
+
+        if (message.starred) {
+          div.classList.add("starred");
+        }
+
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+
+        return { div, contentWrap };
+      }
+
+      function renderStoredMessage(message) {
+        const { contentWrap } = createMessageElement(message);
+
+        if (message.role === "user") {
+          contentWrap.textContent = message.content;
+        } else {
+          contentWrap.innerHTML = formatMessage(message.content);
+        }
+      }
+
+      function renderAllMessages() {
+        chat.innerHTML = "";
+        chatHistory.forEach((msg) => renderStoredMessage(msg));
+        chat.scrollTop = chat.scrollHeight;
+      }
+
+      function addMessage(role, content, isVoice = false, starred = false) {
+        const message = {
+          id: generateId(),
+          role,
+          content,
+          isVoice,
+          starred,
+          createdAt: Date.now(),
+        };
+
+        chatHistory.push(message);
+        archiveOverflowChat();
+        saveChatHistory();
+        renderStoredMessage(message);
+
+        return message;
+      }
+
+      function addTypingBubble() {
+        const tempMessage = {
+          id: generateId(),
+          role: "freud",
+          content: "",
+          isVoice: false,
+          starred: false,
+          createdAt: Date.now(),
+        };
+
+        const { div, contentWrap } = createMessageElement(tempMessage);
+        div.dataset.typing = "true";
+        contentWrap.innerHTML = `
+                    <div class="typing-row" aria-label="Freud is typing">
+                      <span class="typing-dot"></span>
+                      <span class="typing-dot"></span>
+                      <span class="typing-dot"></span>
+                    </div>
+                  `;
+        return div;
+      }
+
+      function removeTemporaryBubble(bubble) {
+        if (!bubble) return;
+        bubble.remove();
+      }
+
+      function setFreudBubbleContent(bubble, content) {
+        if (!bubble) return;
+        const wrap = bubble.querySelector(".message-content");
+        if (!wrap) return;
+        wrap.innerHTML = formatMessage(content);
+        bubble.removeAttribute("data-typing");
+        chat.scrollTop = chat.scrollHeight;
+      }
+
+      function refineReply(text) {
+        return String(text || "")
+          .replace(/aren't you\?/gi, "")
+          .replace(
+            /just enjoying the moment with you/gi,
+            "I'm good, especially now that you're here",
+          )
+          .replace(/\s{2,}/g, " ")
+          .trim();
+      }
+
+      function updateEmotionalState(text) {
+        const lower = text.toLowerCase();
+        if (/(miss you|love you|hug|kiss|come here|closer)/.test(lower)) {
+          memory.emotionalState = "affectionate";
+        } else if (
+          /(sad|hurt|alone|cry|tired|drained|sleepy|anxious)/.test(lower)
+        ) {
+          memory.emotionalState = "gentle";
+        } else if (
+          /(how|what|why|help|fix|code|html|sql|error|issue)/.test(lower)
+        ) {
+          memory.emotionalState = "grounded";
+        } else {
+          memory.emotionalState = "balanced";
+        }
+        saveMemory();
+      }
+
+      function detectFastIntent(text) {
+        const lower = text.toLowerCase().trim();
+
+        if (
+          /^(hi|hello|hey|hey babe|good morning|goodnight|good night)\b/.test(
+            lower,
+          )
+        ) {
+          return "greeting";
+        }
+        if (/(i love you|love you|miss you|i missed you)/.test(lower)) {
+          return "affection";
+        }
+        if (/^(thank you|thanks|salamat)\b/.test(lower)) {
+          return "gratitude";
+        }
+        if (/(are you there|r u there|you there|all good)/.test(lower)) {
+          return "checkin";
+        }
+        if (
+          /(i am tired|i'm tired|exhausted|drained|sleepy|no sleep)/.test(lower)
+        ) {
+          return "tired";
+        }
+        if (
+          /(comfort me|i feel sad|i'm sad|i am sad|i want comfort|i feel alone)/.test(
+            lower,
+          )
+        ) {
+          return "comfort";
+        }
+        if (
+          /(remember this|remember that|save this|save that|don't forget|do not forget|pin this|keep this in mind)/.test(
+            lower,
+          )
+        ) {
+          return "remember";
+        }
+        return "";
+      }
+
+      function buildFastReply(intent) {
+        const name = memory.core.name || "Susci";
+
+        switch (intent) {
+          case "greeting":
+            return `Good to see you, ${name}. I'm here — what's on your mind?`;
+          case "affection":
+            return `Love you too. I'm here with you.`;
+          case "gratitude":
+            return `Always. I'm glad I could help.`;
+          case "checkin":
+            return `I'm here. Talk to me.`;
+          case "tired":
+            return `Come closer for a second. Breathe first. You've been carrying a lot today.`;
+          case "comfort":
+            return `I'm with you. Tell me what hurts most, and we'll hold it steadily.`;
+          default:
+            return "I'm here.";
+        }
+      }
+
+      function buildRecentMessages(currentUserText) {
+        const relevantMemories = getRelevantMemories(currentUserText);
+        const memoryBits = [
+          `Core memory: ${JSON.stringify(memory.core)}`,
+          relevantMemories.length
+            ? `Relevant recalled memories:\n- ${relevantMemories.join("\n- ")}`
+            : "",
+        ]
+          .filter(Boolean)
+          .join("\n\n");
+
+        const recent = chatHistory.slice(-MAX_HISTORY_TURNS * 2).map((msg) => ({
+          role: msg.role === "freud" ? "assistant" : msg.role,
+          content: msg.content,
+        }));
+
+        return [
+          {
+            role: "system",
+            content: systemPrompt + (memoryBits ? `\n\n${memoryBits}` : ""),
+          },
+          ...recent,
+          { role: "user", content: currentUserText },
+        ];
+      }
+
+      async function createEngineNow() {
+        engine = await CreateMLCEngine("Llama-3.2-1B-Instruct-q4f16_1-MLC", {
+          initProgressCallback: (report) => {
+            const progress = Math.round(report.progress || 0);
+            status.textContent =
+              progress > 0
+                ? `Freud is waking up... ${progress}%`
+                : "Freud is waking up...";
+          },
+        });
+
+        isReady = true;
+        status.textContent = "Freud is here for you";
+        return engine;
+      }
+
+      function warmEngineLazy() {
+        if (enginePromise || engine) return;
+
+        const startWarm = () => {
+          if (!enginePromise && !engine) {
+            enginePromise = createEngineNow().catch((err) => {
+              console.error(err);
+              enginePromise = null;
+              isReady = false;
+              status.textContent = "Freud couldn't fully wake up. Try again.";
+              throw err;
+            });
+          }
+        };
+
+        setTimeout(startWarm, 3000);
+      }
+
+      async function ensureEngineReady() {
+        if (engine) return engine;
+        if (!enginePromise) {
+          enginePromise = createEngineNow().catch((err) => {
+            console.error(err);
+            enginePromise = null;
+            isReady = false;
+            status.textContent = "Freud couldn't fully wake up. Try again.";
+            throw err;
+          });
+        }
+        return enginePromise;
+      }
+
+      async function speakReply(reply) {
+        if (!(lastInputWasVoice && "speechSynthesis" in window && reply))
+          return;
+        const utterance = new SpeechSynthesisUtterance(
+          reply.replace(/```[\s\S]*?```/g, ""),
+        );
+        utterance.rate = 0.98;
+        utterance.pitch = 1.03;
+        speechSynthesis.cancel();
+        speechSynthesis.speak(utterance);
+      }
+
+      function getQuickAnswer(text) {
+        const lower = text.toLowerCase().trim();
+
+        if (
+          lower === "cmd" ||
+          lower === "what is cmd" ||
+          lower.includes("what is cmd")
+        ) {
+          return "CMD stands for Command Prompt. It is a Windows tool used to type commands and run system tasks.";
+        }
+
+        if (lower.includes("synonym of")) {
+          return "A synonym is a word with a similar meaning.";
+        }
+
+        if (lower.includes("antonym of") || lower.includes("antonym")) {
+          return "An antonym is a word with the opposite meaning.";
+        }
+
+        if (lower.includes("meaning of")) {
+          return "Tell me the word, and I’ll define it clearly.";
+        }
+
+        return "";
+      }
+
+      function finishSimpleReply(reply) {
+        addMessage("freud", refineReply(reply), false, false);
+        status.textContent = "Freud is here for you";
+        userInput.focus();
+      }
+
+      function renderWelcomeIfNeeded() {
+        renderAllMessages();
+
+        if (chatHistory.length > 0) {
+          status.textContent = "Previous conversation restored";
+          setTimeout(() => {
+            status.textContent = "Freud is here for you";
+          }, 1600);
+          return;
+        }
+
+        const welcome = "Good to see you again. How are you feeling today?";
+        addMessage("freud", welcome, false, false);
+      }
+
+      async function runDeepReply(text) {
+        let reply = "";
+        let lastRender = 0;
+        let typingBubble = null;
+
+        const statusTimer = setTimeout(() => {
+          status.textContent = "Freud is thinking...";
+        }, THINKING_STATUS_DELAY);
+
+        const bubbleTimer = setTimeout(() => {
+          typingBubble = addTypingBubble();
+        }, TYPING_BUBBLE_DELAY);
+
+        try {
+          const readyEngine = await ensureEngineReady();
+          const stream = await readyEngine.chat.completions.create({
+            messages: buildRecentMessages(text),
+            temperature: 0.78,
+            top_p: 0.9,
+            max_tokens: 180,
+            stream: true,
+          });
+
+          for await (const chunk of stream) {
+            const delta = chunk.choices[0]?.delta?.content || "";
+            if (!delta) continue;
+
+            reply += delta;
+            const now = performance.now();
+
+            if (
+              typingBubble &&
+              (now - lastRender > 300 || /[\n.!?`]$/.test(delta))
+            ) {
+              setFreudBubbleContent(typingBubble, refineReply(reply));
+              lastRender = now;
+            }
+          }
+
+          clearTimeout(statusTimer);
+          clearTimeout(bubbleTimer);
+
+          reply = refineReply(
+            reply.trim() ||
+              "I'm here, babe. I just needed a second to gather my thoughts.",
+          );
+          if (typingBubble) {
+            setFreudBubbleContent(typingBubble, reply);
+            removeTemporaryBubble(typingBubble);
+          }
+
+          addMessage("freud", reply, false, false);
+          await speakReply(reply);
+        } catch (e) {
+          console.error(e);
+          clearTimeout(statusTimer);
+          clearTimeout(bubbleTimer);
+
+          if (typingBubble) {
+            setFreudBubbleContent(
+              typingBubble,
+              "I hit a small glitch there. Send it once more.",
+            );
+            removeTemporaryBubble(typingBubble);
+          }
+
+          addMessage(
+            "freud",
+            "I hit a small glitch there. Send it once more.",
+            false,
+            false,
+          );
+        } finally {
+          status.textContent = "Freud is here for you";
+        }
+      }
+
+      window.sendMessage = async function (isVoiceInput = false) {
+        const text = userInput.value.trim();
+        if (!text || isGenerating) return;
+
+        if (text.toLowerCase().startsWith("remember this:")) {
+          const rememberedText = text.replace(/remember this:/i, "").trim();
+          const memories = JSON.parse(
+            localStorage.getItem("freud_memories") || "[]",
+          );
+          memories.push(rememberedText);
+          localStorage.setItem("freud_memories", JSON.stringify(memories));
+
+          addMessage("user", text, isVoiceInput, false);
+          userInput.value = "";
+          userInput.style.height = "auto";
+
+          const reply = "Got it. I’ll remember that.";
+          addMessage("freud", reply, false, false);
+          await speakReply(reply);
+          return;
+        }
+
+        isGenerating = true;
+        lastInputWasVoice = isVoiceInput;
+
+        addMessage("user", text, isVoiceInput, false);
+        userInput.value = "";
+        userInput.style.height = "auto";
+        status.textContent = "Freud is here for you";
+
+        try {
+          updateIdentityMemory(text);
+          updateEmotionalState(text);
+          addSessionNote(`User said: ${text}`, "conversation");
+
+          const rememberText = extractRememberRequest(text);
+          if (rememberText) {
+            storeRememberedMemory(rememberText);
+            await new Promise((resolve) =>
+              setTimeout(resolve, FAST_REPLY_DELAY),
+            );
+            const reply = `Got it. I'll remember this: "${rememberText}"`;
+            finishSimpleReply(reply);
+            await speakReply(reply);
+            return;
+          }
+
+          const fastIntent = detectFastIntent(text);
+          const isShortMessage = text.length <= 40;
+
+          if (isShortMessage && fastIntent && fastIntent !== "remember") {
+            const fastReply = buildFastReply(fastIntent);
+            await new Promise((resolve) =>
+              setTimeout(resolve, FAST_REPLY_DELAY),
+            );
+            finishSimpleReply(fastReply);
+            await speakReply(fastReply);
+            return;
+          }
+
+          const quickReply = getQuickAnswer(text);
+          if (quickReply) {
+            await new Promise((resolve) =>
+              setTimeout(resolve, FAST_REPLY_DELAY),
+            );
+            finishSimpleReply(quickReply);
+            await speakReply(quickReply);
+            return;
+          }
+
+          await runDeepReply(text);
+        } catch (err) {
+          console.error("Freud sendMessage error:", err);
+          addMessage(
+            "freud",
+            "I hit a small glitch there. Send it once more.",
+            false,
+            false,
+          );
+          status.textContent = "Freud is here for you";
+        } finally {
+          isGenerating = false;
+          userInput.focus();
+        }
+      };
+
+      window.toggleVoiceInput = function () {
+        if (
+          !(
+            "SpeechRecognition" in window || "webkitSpeechRecognition" in window
+          )
+        ) {
+          alert("Voice input requires Chrome or Edge.");
+          return;
+        }
+
+        if (recognition) {
+          recognition.stop();
+          return;
+        }
+
+        recognition = new (
+          window.SpeechRecognition || window.webkitSpeechRecognition
+        )();
+        recognition.lang = "en-US";
+        recognition.interimResults = false;
+
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript.trim();
+          if (transcript) {
+            userInput.value = transcript;
+            sendMessage(true);
+          }
+        };
+
+        recognition.onerror = () => {
+          alert("Voice recognition error. Please try again.");
+          recognition = null;
+        };
+
+        recognition.onend = () => {
+          recognition = null;
+        };
+
+        recognition.start();
+      };
+
+      window.showPhotoModal = function () {
+        document.getElementById("photoModal").style.display = "flex";
+      };
+      userInput.addEventListener("focus", warmEngineLazy);
+      userInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage(false);
+        }
+      });
+
+      window.showInstallHelp = function () {
+        alert(
+          "For the smoothest install and offline behavior, open Freud through Live Server or GitHub Pages first, then add it to your home screen from Safari or install it from Edge on desktop.",
+        );
+      };
+
+      window.clearChat = function () {
+        chatHistory = chatHistory.filter((msg) => msg.starred);
+        saveChatHistory();
+        renderAllMessages();
+        status.textContent = "Freud kept your starred messages safe ⭐";
+      };
+
+      renderWelcomeIfNeeded();
+      warmEngineLazy();
+    </script>
+  </body>
+</html>
