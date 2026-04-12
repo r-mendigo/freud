@@ -145,33 +145,65 @@
       }
 
       .input-area {
-        padding: 14px;
-        padding-bottom: calc(14px + env(safe-area-inset-bottom));
-        background: rgba(0, 0, 0, 0.8);
-        display: flex;
-        gap: 8px;
-        align-items: center;
-        flex: 0 0 auto;
-      }
+  padding: 14px;
+  padding-bottom: calc(14px + env(safe-area-inset-bottom));
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.input-area textarea {
+  flex: 0 1 680px;
+  width: 100%;
+  max-width: 680px;
+  min-height: 56px;
+  max-height: 180px;
+  margin: 0 auto;
+}
 
       input,
-      textarea {
-        flex: 1;
-        min-width: 0;
-        padding: 16px 20px;
-        border-radius: 30px;
-        border: none;
-        background: var(--input-bg);
-        color: var(--text);
-        font-size: 16px;
-        outline: none;
-        resize: none;
-        overflow: hidden;
-      }
+textarea {
+  flex: 1;
+  min-width: 0;
+  padding: 16px 20px;
+  border-radius: 30px;
+  border: none;
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 16px;
+  outline: none;
+  resize: none;
+  overflow: hidden;
+  transition:
+    height 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease,
+    background 0.18s ease;
+}
 
       textarea {
         font-family: inherit;
       }
+
+      #userInput {
+  min-height: 56px;
+  max-height: 180px;
+  line-height: 1.45;
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+
+#userInput:focus {
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.18);
+}
+
+#userInput.is-typing {
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.22);
+  transform: translateY(-1px);
+}
 
       input::placeholder {
         color: rgba(238, 250, 244, 0.62);
@@ -570,11 +602,17 @@ I’ll be waiting for you there 💚`,
       const status = document.getElementById("status");
       const userInput = document.getElementById("userInput");
 
+      function resetTextarea() {
+  userInput.classList.remove("is-typing");
+  userInput.style.height = "56px";
+}
+
       // Auto-expand textarea
       userInput.addEventListener("input", function () {
-        this.style.height = "auto";
-        this.style.height = this.scrollHeight + "px";
-      });
+  this.classList.toggle("is-typing", this.value.trim().length > 0);
+  this.style.height = "auto";
+  this.style.height = Math.min(this.scrollHeight, 180) + "px";
+});
 
       // Enter = send, Shift+Enter = new line
       userInput.addEventListener("keydown", function (e) {
@@ -1823,15 +1861,16 @@ About Susci:
         const mathResult = tryMathEvaluation(text);
 
         if (mathResult !== null) {
-          addMessage(
-            "freud",
-            `That comes out to approximately ${mathResult.toFixed(4)}.`,
-            false,
-            false,
-          );
-          userInput.value = "";
-          return;
-        }
+  addMessage(
+    "freud",
+    `That comes out to approximately ${mathResult.toFixed(4)}.`,
+    false,
+    false,
+  );
+  userInput.value = "";
+  resetTextarea();
+  return;
+}
 
         if (!text || isGenerating) return;
         if (text.toLowerCase().startsWith("remember this:")) {
@@ -1851,8 +1890,9 @@ About Susci:
         lastInputWasVoice = isVoiceInput;
 
         addMessage("user", text, isVoiceInput, false);
-        userInput.value = "";
-        status.textContent = "Freud is here ❤️";
+userInput.value = "";
+resetTextarea();
+status.textContent = "Freud is here ❤️";
 
         try {
           updateIdentityMemory(text);
@@ -1924,12 +1964,15 @@ About Susci:
         recognition.interimResults = false;
 
         recognition.onresult = (event) => {
-          const transcript = event.results[0][0].transcript.trim();
-          if (transcript) {
-            userInput.value = transcript;
-            sendMessage(true);
-          }
-        };
+  const transcript = event.results[0][0].transcript.trim();
+  if (transcript) {
+    userInput.value = transcript;
+    userInput.classList.add("is-typing");
+    userInput.style.height = "auto";
+    userInput.style.height = Math.min(userInput.scrollHeight, 180) + "px";
+    sendMessage(true);
+  }
+};
 
         recognition.onerror = () => {
           alert("Voice recognition error. Please try again.");
@@ -1948,9 +1991,9 @@ About Susci:
       };
 
       userInput.addEventListener("focus", warmEngineLazy);
-      userInput.addEventListener("keypress", (e) => {
+      /*userInput.addEventListener("keypress", (e) => {
         if (e.key === "Enter") sendMessage(false);
-      });
+      });*/
 
       window.showInstallHelp = function () {
         alert(
