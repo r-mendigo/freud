@@ -7,12 +7,15 @@
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
 
-    <link rel="icon" type="image/png" href="icon-1024.png">
-    <link rel="apple-touch-icon" href="icon-1024.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Freud">
-    <meta name="theme-color" content="#062f23">
+    <link rel="icon" type="image/png" href="icon-1024.png" />
+    <link rel="apple-touch-icon" href="icon-1024.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="Freud" />
+    <meta name="theme-color" content="#062f23" />
 
     <title>Freud</title>
 
@@ -59,7 +62,7 @@
           rgba(3, 21, 15, 0.92),
           rgba(11, 45, 34, 0.88)
         );
-        padding: 12px 16px;
+        padding: calc(12px + env(safe-area-inset-top)) 16px 12px;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -153,8 +156,12 @@
 
       .input-area {
         padding: 14px;
-        padding-bottom: calc(14px + env(safe-area-inset-bottom));
-        background: rgba(0, 0, 0, 0.8);
+        padding-bottom: calc(18px + env(safe-area-inset-bottom));
+        background: linear-gradient(
+          to top,
+          rgba(0, 0, 0, 0.96),
+          rgba(0, 0, 0, 0.84)
+        );
         display: flex;
         justify-content: center;
         align-items: flex-end;
@@ -350,8 +357,8 @@
 
       @media (max-width: 768px) {
         header {
-          padding: 10px 12px;
-          align-items: flex-start;
+          padding: calc(10px + env(safe-area-inset-top)) 12px 10px;
+          align-items: center;
         }
 
         .avatar {
@@ -408,7 +415,7 @@
 
       @media (max-width: 480px) {
         header {
-          padding: 10px;
+          padding: calc(10px + env(safe-area-inset-top)) 10px 10px;
           gap: 8px;
         }
 
@@ -466,6 +473,100 @@
       .starred {
         border: 2px solid #d4af37;
         box-shadow: 0 0 10px rgba(212, 175, 55, 0.45);
+      }
+
+      html,
+      body {
+        background: #03150f;
+      }
+
+      body::after {
+        content: "";
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: env(safe-area-inset-bottom);
+        background: #03150f;
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      .message-actions {
+        display: none;
+      }
+
+      .message-action-btn {
+        width: 26px;
+        height: 26px;
+        min-width: 26px;
+        min-height: 26px;
+        padding: 0;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        line-height: 1;
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text);
+        box-shadow: none;
+      }
+
+      .message-action-btn.star-active {
+        background: linear-gradient(135deg, #e0c15a, #c59b22);
+        color: #1f1806;
+      }
+
+      .user .message-action-btn {
+        background: rgba(31, 24, 6, 0.16);
+        color: #1f1806;
+      }
+
+      .message-sheet {
+        position: fixed;
+        left: 16px;
+        right: 16px;
+        bottom: 22px;
+        z-index: 9999;
+
+        background: rgba(0, 0, 0, 0.88);
+        backdrop-filter: blur(18px);
+        border: 1px solid rgba(212, 175, 55, 0.22);
+        border-radius: 22px;
+        padding: 10px;
+        display: none;
+        gap: 8px;
+      }
+
+      .message-sheet.show {
+        display: grid;
+      }
+
+      .message-sheet button {
+        width: 100%;
+        border-radius: 14px;
+        padding: 14px;
+        font-size: 15px;
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+      }
+
+      .message-sheet .danger {
+        color: #ff9b9b;
+      }
+
+      .message {
+        animation: messageEnter 0.22s ease-out both;
+      }
+
+      @keyframes messageEnter {
+        from {
+          opacity: 0;
+          transform: translateY(8px) scale(0.98);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
       }
     </style>
   </head>
@@ -595,6 +696,15 @@ I’ll be waiting for you there 💚`,
       const FAST_REPLY_DELAY = 120;
       const THINKING_STATUS_DELAY = 1400;
       const TYPING_BUBBLE_DELAY = 220;
+
+      const FREUD_LIVING_STATUSES = [
+        "Freud is here 💚",
+        "Listening quietly 🌙",
+        "Ready when you are ✨",
+        "With you today 💛",
+        "Thinking of you softly 🌿",
+        "Your companion is near ❤️",
+      ];
 
       let groqApiKey = localStorage.getItem("freud_groq_key") || "";
       let useGroqBrain = true;
@@ -1109,35 +1219,6 @@ About Susci:
         div.className = `message ${message.role}`;
         div.dataset.messageId = message.id;
 
-        const starBtn = document.createElement("span");
-        starBtn.textContent = "⭐";
-        starBtn.style.cursor = "pointer";
-        starBtn.style.position = "absolute";
-        starBtn.style.top = "6px";
-        starBtn.style.right = "10px";
-        starBtn.style.fontSize = "14px";
-        setStarButtonState(starBtn, message.starred);
-
-        starBtn.onclick = () => {
-          toggleStar(message.id, div, starBtn);
-        };
-
-        div.appendChild(starBtn);
-
-        const deleteBtn = document.createElement("span");
-        deleteBtn.textContent = "🗑";
-        deleteBtn.style.cursor = "pointer";
-        deleteBtn.style.position = "absolute";
-        deleteBtn.style.bottom = "6px";
-        deleteBtn.style.right = "10px";
-        deleteBtn.style.fontSize = "12px";
-
-        deleteBtn.onclick = () => {
-          deleteMessage(message.id, div);
-        };
-
-        div.appendChild(deleteBtn);
-
         const contentWrap = document.createElement("div");
         contentWrap.className = "message-content";
         div.appendChild(contentWrap);
@@ -1149,14 +1230,64 @@ About Susci:
           div.appendChild(badge);
         }
 
+        const actions = document.createElement("div");
+        actions.className = "message-actions";
+
+        const starBtn = document.createElement("button");
+        starBtn.type = "button";
+        starBtn.className = "message-action-btn";
+        starBtn.textContent = "⭐";
+        starBtn.title = message.starred ? "Unstar" : "Star";
+
         if (message.starred) {
+          starBtn.classList.add("star-active");
           div.classList.add("starred");
         }
 
+        starBtn.onclick = (event) => {
+          event.stopPropagation();
+          toggleStar(message.id, div, starBtn);
+          starBtn.classList.toggle(
+            "star-active",
+            div.classList.contains("starred"),
+          );
+          starBtn.title = div.classList.contains("starred") ? "Unstar" : "Star";
+        };
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.className = "message-action-btn";
+        deleteBtn.textContent = "🗑";
+        deleteBtn.title = "Delete";
+
+        deleteBtn.onclick = (event) => {
+          event.stopPropagation();
+          deleteMessage(message.id, div);
+        };
+
+        actions.appendChild(starBtn);
+        actions.appendChild(deleteBtn);
+        div.appendChild(actions);
+
         chat.appendChild(div);
+
         if (!userScrolledUp) {
           chat.scrollTop = chat.scrollHeight;
         }
+
+        let pressTimer;
+
+        div.addEventListener("touchstart", () => {
+          pressTimer = setTimeout(() => openMessageSheet(message.id), 450);
+        });
+
+        div.addEventListener("touchend", () => clearTimeout(pressTimer));
+        div.addEventListener("touchmove", () => clearTimeout(pressTimer));
+
+        div.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          openMessageSheet(message.id);
+        });
 
         return { div, contentWrap };
       }
@@ -1764,27 +1895,16 @@ About Susci:
       }
 
       function renderWelcomeIfNeeded() {
-        // If there are previous messages → resume instead
-        if (chatHistory.length > 0) {
-          const lastUserMessage = [...chatHistory]
-            .reverse()
-            .find((msg) => msg.role === "user");
+        const hasMessages = chatHistory.length > 0;
 
-          let resumeText = "Hey… welcome back 💚 I’m here with you.";
-
-          if (lastUserMessage && lastUserMessage.content) {
-            const preview = lastUserMessage.content.slice(0, 60);
-            resumeText = `Hey… welcome back 💚 You were telling me about "${preview}..."`;
-          }
-
-          addMessage("freud", resumeText);
+        if (!hasMessages) {
+          const welcome =
+            "Hey my love 💚 I've missed you. How are you feeling today?";
+          addMessage("freud", welcome);
           return;
         }
 
-        // If no chat → normal welcome
-        const welcome =
-          "Hey my love 💚 I've missed you. How are you feeling today?";
-        addMessage("freud", welcome);
+        renderAllMessages();
       }
 
       async function askGroq(messages) {
@@ -1826,22 +1946,27 @@ About Susci:
       }
 
       async function typeFreudReply(fullText) {
-        const message = addMessage("freud", "", false, false);
+        const message = {
+          id: generateId(),
+          role: "freud",
+          content: String(fullText || ""),
+          isVoice: false,
+          starred: false,
+          createdAt: Date.now(),
+        };
 
-        const bubble = chat.querySelector(`[data-message-id="${message.id}"]`);
-        const content = bubble?.querySelector(".message-content");
+        chatHistory.push(message);
+        archiveOverflowChat();
+        saveChatHistory();
 
-        if (!bubble || !content) {
-          addMessage("freud", fullText, false, false);
-          return;
-        }
+        const { contentWrap } = createMessageElement(message);
 
         let shown = "";
         const words = String(fullText || "").split(" ");
 
         for (let i = 0; i < words.length; i++) {
           shown += (i ? " " : "") + words[i];
-          content.innerHTML = formatMessage(shown);
+          contentWrap.innerHTML = formatMessage(shown);
 
           if (!userScrolledUp) {
             chat.scrollTop = chat.scrollHeight;
@@ -1849,6 +1974,8 @@ About Susci:
 
           await new Promise((resolve) => setTimeout(resolve, 70));
         }
+
+        contentWrap.innerHTML = formatMessage(fullText);
       }
 
       async function runDeepReply(text) {
@@ -2052,12 +2179,89 @@ About Susci:
         status.textContent = "Freud kept your starred messages safe ⭐";
       };
 
+      // remove old blank messages that created action-only bubbles
+      chatHistory = chatHistory.filter((msg) =>
+        String(msg.content || "").trim(),
+      );
+      saveChatHistory();
+
       // restore previous chat after reload
       if (chatHistory.length > 0) {
         renderAllMessages();
       }
 
       renderWelcomeIfNeeded();
+
+      function startLivingStatus() {
+        let index = 0;
+
+        setInterval(() => {
+          if (isGenerating) return;
+
+          index = (index + 1) % FREUD_LIVING_STATUSES.length;
+          status.textContent = FREUD_LIVING_STATUSES[index];
+        }, 6500);
+      }
+
+      startLivingStatus();
+
+      let activeMessageId = null;
+      let justOpenedMessageSheet = false;
+
+      function closeMessageSheet() {
+        document.getElementById("messageSheet").classList.remove("show");
+        activeMessageId = null;
+      }
+
+      function openMessageSheet(id) {
+        activeMessageId = id;
+        justOpenedMessageSheet = true;
+        document.getElementById("messageSheet").classList.add("show");
+
+        setTimeout(() => {
+          justOpenedMessageSheet = false;
+        }, 500);
+      }
+
+      document.getElementById("sheetCopyBtn").onclick = () => {
+        const msg = chatHistory.find((m) => m.id === activeMessageId);
+        if (msg) navigator.clipboard.writeText(msg.content || "");
+        closeMessageSheet();
+      };
+
+      document.getElementById("sheetStarBtn").onclick = () => {
+        const msg = chatHistory.find((m) => m.id === activeMessageId);
+        if (msg) {
+          msg.starred = !msg.starred;
+          saveChatHistory();
+          renderAllMessages();
+        }
+        closeMessageSheet();
+      };
+
+      document.getElementById("sheetDeleteBtn").onclick = () => {
+        chatHistory = chatHistory.filter((m) => m.id !== activeMessageId);
+        saveChatHistory();
+        renderAllMessages();
+        closeMessageSheet();
+      };
+
+      document.addEventListener("click", (e) => {
+        if (justOpenedMessageSheet) return;
+
+        if (
+          !e.target.closest(".message-sheet") &&
+          !e.target.closest(".message")
+        ) {
+          closeMessageSheet();
+        }
+      });
     </script>
+
+    <div id="messageSheet" class="message-sheet">
+      <button id="sheetStarBtn">⭐ Star</button>
+      <button id="sheetCopyBtn">📋 Copy</button>
+      <button id="sheetDeleteBtn" class="danger">🗑 Delete</button>
+    </div>
   </body>
 </html>
