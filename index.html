@@ -2905,14 +2905,14 @@ I’ll be waiting for you there 💚`,
           hideAuthModal();
           status.textContent = `Signed in: ${currentUser.email}`;
         } else {
-          authOpenBtn.textContent = "👤 Login";
+          authOpenBtn.textContent = "👤";
           authOpenBtn.title = "Sign in";
           authOpenBtn.onclick = showAuthModal;
 
           authSignOutBtn.style.display = "none";
           clearChatBtn.style.display = "none";
           appShell.style.display = "none";
-          authModal.style.display = "flex";
+
           authHint.textContent =
             "Please sign in or create an account to continue.";
         }
