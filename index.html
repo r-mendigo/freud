@@ -951,7 +951,11 @@ I’ll be waiting for you there 💚`,
       const SUPABASE_URL = "https://yskshgrjoaksngfdmbnz.supabase.co";
       const SUPABASE_ANON_KEY =
         "sb_publishable_fjUQf3Pd3ksu3GFbjNBiMQ_v8vK-6dr";
-      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: {
+          storageKey: "freud-auth-session-v1",
+        },
+      });
 
       const STORAGE_KEYS = {
         memory: "freud_memory_v5",
@@ -3031,7 +3035,7 @@ I’ll be waiting for you there 💚`,
       };
 
       window.signOutFreud = async function () {
-        await supabase.auth.signOut();
+        await supabase.auth.signOut({ scope: "local" });
         currentUser = null;
         chat.innerHTML = "";
         updateAuthUI();
