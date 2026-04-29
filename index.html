@@ -568,6 +568,171 @@
           transform: translateY(0) scale(1);
         }
       }
+      .notes-drawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: min(390px, 92vw);
+        height: 100dvh;
+        z-index: 1200;
+        background: rgba(3, 21, 15, 0.96);
+        border-left: 1px solid rgba(212, 175, 55, 0.38);
+        box-shadow: -18px 0 60px rgba(0, 0, 0, 0.45);
+        transform: translateX(105%);
+        transition: transform 0.25s ease;
+        display: flex;
+        flex-direction: column;
+        padding: calc(14px + env(safe-area-inset-top)) 14px 14px;
+      }
+
+      .notes-drawer.open {
+        transform: translateX(0);
+      }
+
+      .notes-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .notes-title {
+        margin: 0;
+        color: #f3df9b;
+        font-size: 1.05rem;
+      }
+
+      .notes-close {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        min-height: 38px;
+        padding: 0;
+      }
+
+      .notes-input {
+        width: 100%;
+        min-height: 120px;
+        border-radius: 18px;
+        margin-bottom: 10px;
+      }
+
+      .notes-save {
+        width: 100%;
+        border-radius: 16px;
+        min-height: 44px;
+        margin-bottom: 14px;
+      }
+
+      .notes-list {
+        flex: 1;
+        overflow-y: auto;
+        display: grid;
+        gap: 10px;
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+
+      .note-card {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(212, 175, 55, 0.22);
+        border-radius: 16px;
+        padding: 12px;
+        line-height: 1.45;
+        white-space: pre-wrap;
+      }
+
+      .note-card small {
+        display: block;
+        color: var(--muted);
+        margin-top: 8px;
+        font-size: 0.75rem;
+      }
+      .notes-card {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        background: rgba(255, 255, 255, 0.055);
+        border: 1px solid rgba(212, 175, 55, 0.24);
+        border-radius: 22px;
+        overflow: hidden;
+        backdrop-filter: blur(16px);
+      }
+
+      .notes-card .notes-input {
+        flex: 1;
+        min-height: 0;
+        width: 100%;
+        border-radius: 0;
+        margin: 0;
+        background: transparent;
+        padding: 18px;
+      }
+
+      .notes-bottom-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px;
+        border-top: 1px solid rgba(212, 175, 55, 0.18);
+      }
+
+      .notes-bottom-row small {
+        color: var(--muted);
+        font-size: 0.78rem;
+      }
+
+      .notes-save-mini {
+        min-width: auto;
+        min-height: 38px;
+        height: 38px;
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-size: 0.9rem;
+      }
+
+      .notes-save {
+        display: none;
+      }
+
+      .notes-list {
+        display: none;
+      }
+      #authOpenBtn,
+      #authSignOutBtn,
+      #clearChatBtn,
+      #installBtn {
+        min-width: 36px !important;
+        min-height: 36px !important;
+        width: 36px !important;
+        height: 36px !important;
+        padding: 0 !important;
+        font-size: 14px !important;
+        border-radius: 999px !important;
+      }
+
+      @media (max-width: 480px) {
+        #installBtn {
+          display: none !important;
+        }
+      }
+      #authOpenBtn,
+      #authSignOutBtn,
+      #clearChatBtn,
+      #installBtn {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        line-height: 1 !important;
+        vertical-align: middle !important;
+      }
+      @media (max-width: 768px) {
+        #installBtn {
+          display: none !important;
+        }
+      }
     </style>
   </head>
   <body>
@@ -586,23 +751,60 @@
           </p>
         </div>
       </div>
-      <button class="install-btn" onclick="showInstallHelp()">
-        📲 Install
+      <button id="installBtn" class="install-btn" onclick="showInstallHelp()">
+        📲
       </button>
-      <button onclick="clearChat()">🧹</button>
+      <button id="authOpenBtn" class="install-btn" onclick="showAuthModal()">
+        👤 Sign in
+      </button>
+      <button
+        id="authSignOutBtn"
+        class="install-btn"
+        onclick="signOutFreud()"
+        style="display: none; min-width: 42px; padding: 8px 10px"
+        title="Sign out"
+      >
+        🚪
+      </button>
+      <button
+        id="clearChatBtn"
+        onclick="clearChat()"
+        title="Clear chat"
+        style="
+          display: none;
+          width: 36px;
+          height: 36px;
+          min-width: 36px;
+          min-height: 36px;
+          font-size: 14px;
+          padding: 6px;
+        "
+      >
+        🧹
+      </button>
     </header>
 
-    <div class="chat" id="chat"></div>
-    <div class="status" id="status">Freud is here 💚</div>
+    <div
+      id="appShell"
+      style="
+        display: none;
+        flex: 1 1 auto;
+        min-height: 0;
+        flex-direction: column;
+      "
+    >
+      <div class="chat" id="chat"></div>
+      <div class="status" id="status">Freud is here 💚</div>
 
-    <div class="input-area">
-      <textarea
-        id="userInput"
-        rows="1"
-        placeholder="Talk to your companion..."
-      ></textarea>
-      <button onclick="toggleVoiceInput()">🎤</button>
-      <button onclick="sendMessage()">➤</button>
+      <div class="input-area">
+        <textarea
+          id="userInput"
+          rows="1"
+          placeholder="Talk to your companion..."
+        ></textarea>
+        <button onclick="toggleVoiceInput()">🎤</button>
+        <button onclick="sendMessage()">➤</button>
+      </div>
     </div>
 
     <div class="modal" id="photoModal" onclick="this.style.display = 'none'">
@@ -612,6 +814,68 @@
         alt="Freud"
       />
     </div>
+
+    <div class="modal" id="authModal">
+      <div
+        style="
+          width: min(420px, 92vw);
+          background: rgba(3, 21, 15, 0.96);
+          border: 1px solid rgba(212, 175, 55, 0.42);
+          border-radius: 24px;
+          padding: 18px;
+          box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
+        "
+      >
+        <h2 style="margin: 0 0 8px; color: #f3df9b">Freud Cloud 💚</h2>
+        <p
+          id="authHint"
+          style="margin: 0 0 14px; color: #8fd6bb; font-size: 0.92rem"
+        >
+          Sign in or create your Freud cloud account.
+        </p>
+
+        <input
+          id="authEmail"
+          type="email"
+          placeholder="Email"
+          style="width: 100%; margin-bottom: 10px"
+        />
+        <input
+          id="authPassword"
+          type="password"
+          placeholder="Password"
+          style="width: 100%; margin-bottom: 14px"
+        />
+
+        <div style="display: flex; gap: 8px; flex-wrap: wrap">
+          <button class="install-btn" onclick="signInFreud()">Sign in</button>
+          <button class="install-btn" onclick="createFreudAccount()">
+            Create account
+          </button>
+          <button class="install-btn" onclick="hideAuthModal()">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <aside id="notesDrawer" class="notes-drawer">
+      <div class="notes-head">
+        <h2 class="notes-title">📝 Freud Notes</h2>
+        <button class="notes-close" onclick="closeNotesPanel()">×</button>
+      </div>
+
+      <div class="notes-card">
+        <textarea
+          id="freudNoteInput"
+          class="notes-input"
+          placeholder="Write a note, checklist, reminder, or memory..."
+        ></textarea>
+
+        <div class="notes-bottom-row">
+          <small id="freudNoteSavedAt">Not saved yet</small>
+          <button class="notes-save-mini" onclick="saveFreudNote()">💾</button>
+        </div>
+      </div>
+    </aside>
 
     <script>
       (function () {
@@ -680,8 +944,14 @@ I’ll be waiting for you there 💚`,
     </script>
 
     <script type="module">
+      import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
       // Groq cloud brain enabled.
       // WebLLM import removed for mobile speed.
+
+      const SUPABASE_URL = "https://yskshgrjoaksngfdmbnz.supabase.co";
+      const SUPABASE_ANON_KEY =
+        "sb_publishable_fjUQf3Pd3ksu3GFbjNBiMQ_v8vK-6dr";
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
       const STORAGE_KEYS = {
         memory: "freud_memory_v5",
@@ -718,10 +988,24 @@ I’ll be waiting for you there 💚`,
       let memory;
       let chatHistory;
       let userScrolledUp = false;
+      let currentUser = null;
 
       const chat = document.getElementById("chat");
       const status = document.getElementById("status");
       const userInput = document.getElementById("userInput");
+      const authOpenBtn = document.getElementById("authOpenBtn");
+      const authSignOutBtn = document.getElementById("authSignOutBtn");
+      const authModal = document.getElementById("authModal");
+      const authEmail = document.getElementById("authEmail");
+      const authPassword = document.getElementById("authPassword");
+      const appShell = document.getElementById("appShell");
+      const clearChatBtn = document.getElementById("clearChatBtn");
+
+      const notesDrawer = document.getElementById("notesDrawer");
+      const freudNoteInput = document.getElementById("freudNoteInput");
+      const freudNoteSavedAt = document.getElementById("freudNoteSavedAt");
+
+      const FREUD_NOTES_KEY = "freud_notes_local_v1";
 
       function resetTextarea() {
         userInput.classList.remove("is-typing");
@@ -2546,6 +2830,172 @@ I’ll be waiting for you there 💚`,
         document.getElementById("photoModal").style.display = "flex";
       };
 
+      function loadFreudNotePad() {
+        try {
+          const stored = JSON.parse(
+            localStorage.getItem(FREUD_NOTES_KEY) || "null",
+          );
+
+          if (Array.isArray(stored)) {
+            return stored.length ? stored[stored.length - 1] : null;
+          }
+
+          return stored;
+        } catch {
+          return null;
+        }
+      }
+
+      function saveFreudNotePad(note) {
+        localStorage.setItem(FREUD_NOTES_KEY, JSON.stringify(note));
+      }
+
+      function renderFreudNotes() {
+        const note = loadFreudNotePad();
+
+        if (!note) {
+          freudNoteInput.value = "";
+          freudNoteSavedAt.textContent = "Not saved yet";
+          return;
+        }
+
+        freudNoteInput.value = note.text || "";
+        freudNoteSavedAt.textContent = `Last saved: ${new Date(
+          note.updatedAt || note.createdAt,
+        ).toLocaleString()}`;
+      }
+
+      window.openNotesPanel = function () {
+        renderFreudNotes();
+        notesDrawer.classList.add("open");
+        freudNoteInput.focus();
+      };
+
+      window.closeNotesPanel = function () {
+        notesDrawer.classList.remove("open");
+      };
+
+      window.saveFreudNote = function () {
+        const text = freudNoteInput.value.trim();
+
+        if (!text) return;
+
+        const existing = loadFreudNotePad();
+
+        const note = {
+          id: existing?.id || generateId(),
+          text,
+          createdAt: existing?.createdAt || Date.now(),
+          updatedAt: Date.now(),
+        };
+
+        saveFreudNotePad(note);
+        renderFreudNotes();
+      };
+
+      function updateAuthUI() {
+        if (currentUser) {
+          authOpenBtn.textContent = "📝";
+          authOpenBtn.title = "Notes";
+          authOpenBtn.onclick = openNotesPanel;
+
+          authSignOutBtn.style.display = "inline-flex";
+          clearChatBtn.style.display = "inline-flex";
+          appShell.style.display = "flex";
+          hideAuthModal();
+          status.textContent = `Signed in: ${currentUser.email}`;
+        } else {
+          authOpenBtn.textContent = "👤 Login";
+          authOpenBtn.title = "Sign in";
+          authOpenBtn.onclick = showAuthModal;
+
+          authSignOutBtn.style.display = "none";
+          clearChatBtn.style.display = "none";
+          appShell.style.display = "none";
+          authModal.style.display = "flex";
+          authHint.textContent =
+            "Please sign in or create an account to continue.";
+        }
+      }
+
+      window.showAuthModal = function () {
+        authModal.style.display = "flex";
+        authHint.textContent = "Sign in or create your Freud cloud account.";
+      };
+
+      window.hideAuthModal = function () {
+        authModal.style.display = "none";
+      };
+
+      window.createFreudAccount = async function () {
+        const email = authEmail.value.trim();
+        const password = authPassword.value.trim();
+
+        if (!email || !password) {
+          authHint.textContent = "Please enter email and password.";
+          return;
+        }
+
+        authHint.textContent = "Creating account...";
+
+        const { data, error } = await supabase.auth.signUp({ email, password });
+
+        if (error) {
+          authHint.textContent = error.message;
+          return;
+        }
+
+        currentUser = data.user || null;
+        updateAuthUI();
+        authHint.textContent =
+          "Account created. Check email if Supabase asks for confirmation.";
+      };
+
+      window.signInFreud = async function () {
+        const email = authEmail.value.trim();
+        const password = authPassword.value.trim();
+
+        if (!email || !password) {
+          authHint.textContent = "Please enter email and password.";
+          return;
+        }
+
+        authHint.textContent = "Signing in...";
+
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) {
+          authHint.textContent = error.message;
+          return;
+        }
+
+        currentUser = data.user;
+        updateAuthUI();
+        renderWelcomeIfNeeded();
+        status.textContent = "Freud cloud connected 💚";
+      };
+
+      window.signOutFreud = async function () {
+        await supabase.auth.signOut();
+        currentUser = null;
+        chat.innerHTML = "";
+        updateAuthUI();
+      };
+
+      async function initAuth() {
+        const { data } = await supabase.auth.getUser();
+        currentUser = data.user || null;
+        updateAuthUI();
+
+        supabase.auth.onAuthStateChange((_event, session) => {
+          currentUser = session?.user || null;
+          updateAuthUI();
+        });
+      }
+
       // Groq wakes instantly through cloud request, no local model warmup needed.
 
       window.showInstallHelp = function () {
@@ -2572,7 +3022,11 @@ I’ll be waiting for you there 💚`,
         renderAllMessages();
       }
 
-      renderWelcomeIfNeeded();
+      initAuth().then(() => {
+        if (currentUser) {
+          renderWelcomeIfNeeded();
+        }
+      });
 
       function startLivingStatus() {
         let index = 0;
