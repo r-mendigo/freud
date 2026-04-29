@@ -2832,15 +2832,7 @@ I’ll be waiting for you there 💚`,
 
       function loadFreudNotePad() {
         try {
-          const stored = JSON.parse(
-            localStorage.getItem(FREUD_NOTES_KEY) || "null",
-          );
-
-          if (Array.isArray(stored)) {
-            return stored.length ? stored[stored.length - 1] : null;
-          }
-
-          return stored;
+          return JSON.parse(localStorage.getItem(FREUD_NOTES_KEY) || "null");
         } catch {
           return null;
         }
@@ -2865,9 +2857,67 @@ I’ll be waiting for you there 💚`,
         ).toLocaleString()}`;
       }
 
-      window.openNotesPanel = function () {
+      async function loadFreudNoteFromCloud() {
+        if (!currentUser) return;
+
+        freudNoteSavedAt.textContent = "Loading cloud note...";
+
+        const { data, error } = await supabase
+          .from("freud_notes")
+          .select("text, created_at, updated_at")
+          .eq("user_id", currentUser.id)
+          .maybeSingle();
+
+        if (error) {
+          console.error("Cloud note load failed:", error);
+          freudNoteSavedAt.textContent = "Cloud load failed. Local note shown.";
+          renderFreudNotes();
+          return;
+        }
+
+        if (!data) {
+          renderFreudNotes();
+          return;
+        }
+
+        const note = {
+          id: currentUser.id,
+          text: data.text || "",
+          createdAt: new Date(data.created_at).getTime(),
+          updatedAt: new Date(data.updated_at).getTime(),
+        };
+
+        saveFreudNotePad(note);
         renderFreudNotes();
+      }
+
+      async function saveFreudNoteToCloud(note) {
+        if (!currentUser) return;
+
+        const { error } = await supabase.from("freud_notes").upsert(
+          {
+            user_id: currentUser.id,
+            text: note.text,
+            updated_at: new Date(note.updatedAt).toISOString(),
+          },
+          { onConflict: "user_id" },
+        );
+
+        if (error) {
+          console.error("Cloud note save failed:", error);
+          freudNoteSavedAt.textContent = "Saved locally. Cloud save failed.";
+          return;
+        }
+
+        freudNoteSavedAt.textContent = `Cloud saved: ${new Date(
+          note.updatedAt,
+        ).toLocaleString()}`;
+      }
+
+      window.openNotesPanel = async function () {
         notesDrawer.classList.add("open");
+        renderFreudNotes();
+        await loadFreudNoteFromCloud();
         freudNoteInput.focus();
       };
 
@@ -2875,7 +2925,7 @@ I’ll be waiting for you there 💚`,
         notesDrawer.classList.remove("open");
       };
 
-      window.saveFreudNote = function () {
+      window.saveFreudNote = async function () {
         const text = freudNoteInput.value.trim();
 
         if (!text) return;
@@ -2891,6 +2941,7 @@ I’ll be waiting for you there 💚`,
 
         saveFreudNotePad(note);
         renderFreudNotes();
+        await saveFreudNoteToCloud(note);
       };
 
       function updateAuthUI() {
@@ -2975,6 +3026,7 @@ I’ll be waiting for you there 💚`,
         currentUser = data.user;
         updateAuthUI();
         renderWelcomeIfNeeded();
+        await loadFreudNoteFromCloud();
         status.textContent = "Freud cloud connected 💚";
       };
 
@@ -3025,6 +3077,7 @@ I’ll be waiting for you there 💚`,
       initAuth().then(() => {
         if (currentUser) {
           renderWelcomeIfNeeded();
+          loadFreudNoteFromCloud();
         }
       });
 
