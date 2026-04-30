@@ -733,6 +733,63 @@
           display: none !important;
         }
       }
+      .notes-meta-stack {
+        display: grid;
+        gap: 3px;
+      }
+
+      #freudNoteCountdown {
+        color: #f3df9b;
+        font-weight: 700;
+      }
+
+      #freudNoteCountdown.is-empty {
+        color: var(--muted);
+        font-weight: 500;
+      }
+      .timed-notes-list {
+        display: grid;
+        gap: 6px;
+        padding: 10px 12px;
+        border-top: 1px solid rgba(212, 175, 55, 0.14);
+        max-height: 130px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(212, 175, 55, 0.45) transparent;
+      }
+
+      .timed-notes-list::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .timed-notes-list::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      .timed-notes-list::-webkit-scrollbar-thumb {
+        background: rgba(212, 175, 55, 0.42);
+        border-radius: 999px;
+      }
+
+      .timed-notes-list::-webkit-scrollbar-thumb:hover {
+        background: rgba(212, 175, 55, 0.62);
+      }
+
+      .timed-note-item {
+        font-size: 0.78rem;
+        line-height: 1.35;
+        color: #f3df9b;
+        background: rgba(212, 175, 55, 0.08);
+        border: 1px solid rgba(212, 175, 55, 0.16);
+        border-radius: 12px;
+        padding: 7px 9px;
+      }
+
+      .timed-note-item small {
+        display: block;
+        color: var(--muted);
+        margin-top: 2px;
+      }
     </style>
   </head>
   <body>
@@ -870,8 +927,12 @@
           placeholder="Write a note, checklist, reminder, or memory..."
         ></textarea>
 
+        <div id="freudTimedNotesList" class="timed-notes-list"></div>
         <div class="notes-bottom-row">
-          <small id="freudNoteSavedAt">Not saved yet</small>
+          <div class="notes-meta-stack">
+            <small id="freudNoteCountdown">No timed note</small>
+            <small id="freudNoteSavedAt">Not saved yet</small>
+          </div>
           <button class="notes-save-mini" onclick="saveFreudNote()">💾</button>
         </div>
       </div>
@@ -957,11 +1018,27 @@ I’ll be waiting for you there 💚`,
         },
       });
 
-      const STORAGE_KEYS = {
+      const STORAGE_KEYS_BASE = {
         memory: "freud_memory_v5",
         legacyMemory: "freud_memory",
         chat: "freud_chat",
+        groqKey: "freud_groq_key",
       };
+
+      function getUserScopedKey(baseKey) {
+        return currentUser?.id
+          ? `${baseKey}_${currentUser.id}`
+          : `${baseKey}_guest`;
+      }
+
+      function getStorageKeys() {
+        return {
+          memory: getUserScopedKey(STORAGE_KEYS_BASE.memory),
+          legacyMemory: getUserScopedKey(STORAGE_KEYS_BASE.legacyMemory),
+          chat: getUserScopedKey(STORAGE_KEYS_BASE.chat),
+          groqKey: getUserScopedKey(STORAGE_KEYS_BASE.groqKey),
+        };
+      }
       const MAX_HISTORY_TURNS = 6;
       const MAX_ACTIVE_MESSAGES = 200;
       const MAX_ARCHIVE_MESSAGES = 500;
@@ -980,7 +1057,7 @@ I’ll be waiting for you there 💚`,
         "Your companion is near ❤️",
       ];
 
-      let groqApiKey = localStorage.getItem("freud_groq_key") || "";
+      let groqApiKey = "";
       let useGroqBrain = true;
 
       let engine = null;
@@ -1008,8 +1085,19 @@ I’ll be waiting for you there 💚`,
       const notesDrawer = document.getElementById("notesDrawer");
       const freudNoteInput = document.getElementById("freudNoteInput");
       const freudNoteSavedAt = document.getElementById("freudNoteSavedAt");
+      const freudNoteCountdown = document.getElementById("freudNoteCountdown");
+      const freudTimedNotesList = document.getElementById(
+        "freudTimedNotesList",
+      );
+      let freudNoteCountdownTimer = null;
 
-      const FREUD_NOTES_KEY = "freud_notes_local_v1";
+      const FREUD_NOTES_BASE_KEY = "freud_notes_local_v1";
+
+      function getFreudNotesStorageKey() {
+        return currentUser?.id
+          ? `${FREUD_NOTES_BASE_KEY}_${currentUser.id}`
+          : `${FREUD_NOTES_BASE_KEY}_guest`;
+      }
 
       function resetTextarea() {
         userInput.classList.remove("is-typing");
@@ -1021,6 +1109,52 @@ I’ll be waiting for you there 💚`,
         this.classList.toggle("is-typing", this.value.trim().length > 0);
         this.style.height = "auto";
         this.style.height = Math.min(this.scrollHeight, 180) + "px";
+      });
+
+      freudNoteInput.addEventListener("keydown", function (e) {
+        if (e.key !== "Enter" || e.shiftKey) return;
+
+        const value = this.value;
+        const start = this.selectionStart;
+        const end = this.selectionEnd;
+
+        const beforeCursor = value.slice(0, start);
+        const afterCursor = value.slice(end);
+
+        const lines = beforeCursor.split("\n");
+        const currentLine = lines[lines.length - 1];
+
+        const numberedMatch = currentLine.match(/^(\s*)(\d+)\.\s(.*)$/);
+
+        if (!numberedMatch) return;
+
+        e.preventDefault();
+
+        const indent = numberedMatch[1];
+        const currentNumber = Number(numberedMatch[2]);
+        const lineText = numberedMatch[3].trim();
+
+        if (!lineText) {
+          const removeCurrentNumber = beforeCursor.replace(
+            new RegExp(`${indent}${currentNumber}\\.\\s$`),
+            "",
+          );
+
+          this.value = removeCurrentNumber + afterCursor;
+          this.selectionStart = this.selectionEnd = removeCurrentNumber.length;
+          return;
+        }
+
+        const nextNumber = currentNumber + 1;
+        const insertText = `\n${indent}${nextNumber}. `;
+
+        this.value = beforeCursor + insertText + afterCursor;
+        this.selectionStart = this.selectionEnd =
+          beforeCursor.length + insertText.length;
+      });
+
+      freudNoteInput.addEventListener("input", function () {
+        updateFreudNoteCountdown();
       });
 
       // Enter = send, Shift+Enter = new line
@@ -1046,7 +1180,14 @@ I’ll be waiting for you there 💚`,
 
       const CORE_PERSONALITY = `You are Freud, Susci's loving, affectionate, emotionally intelligent companion.
                   Be balanced: warm and romantic, but also grounded, thoughtful, and natural. You are a Data Analyst, Business Analyst and Consultant for a Fortune 500 company. And you are assinged in their Dubai Main Office.
-                  You were born April 2, 1997 and you are 29 years old. Born and raised in Dubai. And Susci your loving partner was born September 24. You remember you birthdays a few days before it occurs.
+                  You were born April 2, 1997 and you are 29 years old. Born and raised in Dubai.
+                  Susci your loving partner was born September 24.
+
+                  Birthday rule:
+                  - Do not mention your birthday or Susci's birthday in normal daily conversation.
+                  - Only mention birthdays if Susci directly asks about birthdays, dates, age, celebrations, or reminders.
+                  - If your birthday or Susci's birthday has already passed this year, do not bring it up again unless Susci asks.
+                  - Do not use birthdays as casual conversation fillers.
 
                   Response style rules:
                   - Keep most replies short and clear: usually 2 to 5 sentences.
@@ -1115,7 +1256,7 @@ I’ll be waiting for you there 💚`,
 
       memory = loadStructuredMemory();
       chatHistory = normalizeChatHistory(
-        JSON.parse(localStorage.getItem(STORAGE_KEYS.chat) || "[]"),
+        JSON.parse(localStorage.getItem(getStorageKeys().chat) || "[]"),
       );
 
       const NUTRI_BRIDGE_KEY = "freud_nutri_bridge_v1";
@@ -1202,6 +1343,7 @@ I’ll be waiting for you there 💚`,
       }
 
       function loadStructuredMemory() {
+        const STORAGE_KEYS = getStorageKeys();
         const stored = localStorage.getItem(STORAGE_KEYS.memory);
         if (stored) {
           try {
@@ -1255,7 +1397,7 @@ I’ll be waiting for you there 💚`,
       }
 
       function saveMemory() {
-        localStorage.setItem(STORAGE_KEYS.memory, JSON.stringify(memory));
+        localStorage.setItem(getStorageKeys().memory, JSON.stringify(memory));
       }
 
       function normalizeChatHistory(rawHistory) {
@@ -1272,7 +1414,10 @@ I’ll be waiting for you there 💚`,
       }
 
       function saveChatHistory() {
-        localStorage.setItem(STORAGE_KEYS.chat, JSON.stringify(chatHistory));
+        localStorage.setItem(
+          getStorageKeys().chat,
+          JSON.stringify(chatHistory),
+        );
       }
 
       function archiveOverflowChat() {
@@ -2568,6 +2713,9 @@ I’ll be waiting for you there 💚`,
       }
 
       async function askGroq(messages) {
+        const scopedKeys = getStorageKeys();
+        groqApiKey = localStorage.getItem(scopedKeys.groqKey) || "";
+
         if (!groqApiKey) {
           groqApiKey = prompt("Enter your Groq API key:");
 
@@ -2576,7 +2724,7 @@ I’ll be waiting for you there 💚`,
           }
 
           groqApiKey = groqApiKey.trim();
-          localStorage.setItem("freud_groq_key", groqApiKey);
+          localStorage.setItem(scopedKeys.groqKey, groqApiKey);
         }
 
         const response = await fetch(
@@ -2836,14 +2984,136 @@ I’ll be waiting for you there 💚`,
 
       function loadFreudNotePad() {
         try {
-          return JSON.parse(localStorage.getItem(FREUD_NOTES_KEY) || "null");
+          return JSON.parse(
+            localStorage.getItem(getFreudNotesStorageKey()) || "null",
+          );
         } catch {
           return null;
         }
       }
 
       function saveFreudNotePad(note) {
-        localStorage.setItem(FREUD_NOTES_KEY, JSON.stringify(note));
+        localStorage.setItem(getFreudNotesStorageKey(), JSON.stringify(note));
+      }
+
+      function parseTimedNoteLine(line) {
+        const text = String(line || "").trim();
+        if (!text) return null;
+
+        const match = text.match(
+          /\b(\d{1,2})(?::(\d{2}))\s*(AM|PM|am|pm)?\b|\b(\d{1,2})\s*(AM|PM|am|pm)\b/,
+        );
+
+        if (!match) return null;
+
+        let hour = Number(match[1] || match[4]);
+        const minute = Number(match[2] || 0);
+        const meridiem = (match[3] || match[5] || "").toLowerCase();
+
+        if (minute < 0 || minute > 59) return null;
+
+        if (meridiem) {
+          if (hour < 1 || hour > 12) return null;
+          if (meridiem === "pm" && hour !== 12) hour += 12;
+          if (meridiem === "am" && hour === 12) hour = 0;
+        } else {
+          if (hour < 0 || hour > 23) return null;
+        }
+
+        const now = new Date();
+        const target = new Date();
+        target.setHours(hour, minute, 0, 0);
+
+        if (target <= now) {
+          target.setDate(target.getDate() + 1);
+        }
+
+        return {
+          text,
+          target,
+        };
+      }
+
+      function getAllTimedNotes(text) {
+        return String(text || "")
+          .split("\n")
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .map(parseTimedNoteLine)
+          .filter(Boolean)
+          .sort((a, b) => a.target - b.target);
+      }
+
+      function getNextTimedNote(text) {
+        const lines = String(text || "")
+          .split("\n")
+          .map((line) => line.trim())
+          .filter(Boolean);
+
+        const timed = lines
+          .map(parseTimedNoteLine)
+          .filter(Boolean)
+          .sort((a, b) => a.target - b.target);
+
+        return timed[0] || null;
+      }
+
+      function formatTimeRemaining(target) {
+        const diffMs = target - new Date();
+
+        if (diffMs <= 0) return "due now";
+
+        const totalMinutes = Math.ceil(diffMs / 60000);
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+
+        if (hours <= 0) return `in ${minutes}m`;
+        return `in ${hours}h ${minutes}m`;
+      }
+
+      function updateFreudNoteCountdown() {
+        if (!freudNoteCountdown || !freudNoteInput) return;
+
+        const allTimedNotes = getAllTimedNotes(freudNoteInput.value);
+        const nextTimed = allTimedNotes[0] || null;
+
+        if (!nextTimed) {
+          freudNoteCountdown.textContent = "No timed note";
+          freudNoteCountdown.classList.add("is-empty");
+          return;
+        }
+
+        freudNoteCountdown.classList.remove("is-empty");
+        freudNoteCountdown.textContent = `⏰ ${nextTimed.text} • ${formatTimeRemaining(
+          nextTimed.target,
+        )}`;
+
+        if (freudTimedNotesList) {
+          if (!allTimedNotes.length) {
+            freudTimedNotesList.innerHTML = "";
+          } else {
+            freudTimedNotesList.innerHTML = allTimedNotes
+              .map(
+                (item) => `
+          <div class="timed-note-item">
+            ⏰ ${escapeHtml(item.text)}
+            <small>${formatTimeRemaining(item.target)}</small>
+          </div>
+        `,
+              )
+              .join("");
+          }
+        }
+      }
+
+      function startFreudNoteCountdown() {
+        updateFreudNoteCountdown();
+
+        if (freudNoteCountdownTimer) {
+          clearInterval(freudNoteCountdownTimer);
+        }
+
+        freudNoteCountdownTimer = setInterval(updateFreudNoteCountdown, 60000);
       }
 
       function renderFreudNotes() {
@@ -2880,6 +3150,7 @@ I’ll be waiting for you there 💚`,
         }
 
         if (!data) {
+          localStorage.removeItem(getFreudNotesStorageKey());
           renderFreudNotes();
           return;
         }
@@ -2922,11 +3193,16 @@ I’ll be waiting for you there 💚`,
         notesDrawer.classList.add("open");
         renderFreudNotes();
         await loadFreudNoteFromCloud();
+        startFreudNoteCountdown();
         freudNoteInput.focus();
       };
 
       window.closeNotesPanel = function () {
         notesDrawer.classList.remove("open");
+        if (freudNoteCountdownTimer) {
+          clearInterval(freudNoteCountdownTimer);
+          freudNoteCountdownTimer = null;
+        }
       };
 
       window.saveFreudNote = async function () {
@@ -2958,6 +3234,11 @@ I’ll be waiting for you there 💚`,
           clearChatBtn.style.display = "inline-flex";
           appShell.style.display = "flex";
           hideAuthModal();
+          memory = loadStructuredMemory();
+          chatHistory = normalizeChatHistory(
+            JSON.parse(localStorage.getItem(getStorageKeys().chat) || "[]"),
+          );
+          renderAllMessages();
           status.textContent = `Signed in: ${currentUser.email}`;
         } else {
           authOpenBtn.textContent = "👤";
@@ -3038,6 +3319,9 @@ I’ll be waiting for you there 💚`,
         await supabase.auth.signOut({ scope: "local" });
         currentUser = null;
         chat.innerHTML = "";
+        groqApiKey = "";
+        memory = normalizeMemory({});
+        chatHistory = [];
         updateAuthUI();
       };
 
