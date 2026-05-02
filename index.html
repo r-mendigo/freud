@@ -676,18 +676,8 @@
         background: rgba(255, 255, 255, 0.055);
         border: 1px solid rgba(212, 175, 55, 0.24);
         border-radius: 22px;
-        overflow-y: auto;
-        overflow-x: hidden;
-        -webkit-overflow-scrolling: touch;
+        overflow: hidden;
         backdrop-filter: blur(16px);
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-      }
-
-      .notes-card::-webkit-scrollbar {
-        width: 0;
-        height: 0;
-        display: none;
       }
 
       .notes-card .notes-input {
@@ -701,40 +691,14 @@
         overflow-y: auto;
         overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
-        outline: none;
-        white-space: pre-wrap;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
       }
 
       .notes-card .notes-input::-webkit-scrollbar {
-        width: 6px;
-      }
-
-      .notes-card .notes-input::-webkit-scrollbar-track {
-        background: transparent;
-      }
-
-      .notes-card .notes-input::-webkit-scrollbar-thumb {
-        background: rgba(180, 150, 40, 0.58);
-        border-radius: 999px;
-      }
-
-      .notes-card .notes-input::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.04);
-        border-radius: 999px;
-      }
-
-      .notes-card .notes-input::-webkit-scrollbar-thumb {
-        background: linear-gradient(
-          180deg,
-          rgba(212, 175, 55, 0.88),
-          rgba(197, 155, 34, 0.82)
-        );
-        border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-      }
-
-      .notes-card .notes-input::-webkit-scrollbar-thumb:hover {
-        background: rgba(212, 175, 55, 0.82);
+        width: 0;
+        height: 0;
+        display: none;
       }
 
       .notes-bottom-row {
@@ -1010,12 +974,11 @@
       </div>
 
       <div class="notes-card">
-        <div
+        <textarea
           id="freudNoteInput"
           class="notes-input"
-          contenteditable="true"
-          data-placeholder="Write a note, checklist, reminder, or memory..."
-        ></div>
+          placeholder="Write a note, checklist, reminder, or memory..."
+        ></textarea>
 
         <div id="freudTimedNotesList" class="timed-notes-list"></div>
         <div class="notes-bottom-row">
@@ -1257,48 +1220,6 @@ I’ll be waiting for you there 💚`,
         this.selectionStart = this.selectionEnd =
           beforeCursor.length + insertText.length;
       });
-
-      /* function bindFreudNoteScrollBridge() {
-        if (!freudNoteInput) return;
-
-        const notesCard = freudNoteInput.closest(".notes-card");
-        if (!notesCard) return;
-
-        freudNoteInput.addEventListener(
-          "wheel",
-          function (event) {
-            notesCard.scrollTop += event.deltaY;
-            event.preventDefault();
-          },
-          { passive: false },
-        );
-
-        let lastTouchY = null;
-
-        freudNoteInput.addEventListener(
-          "touchstart",
-          function (event) {
-            lastTouchY = event.touches?.[0]?.clientY ?? null;
-          },
-          { passive: true },
-        );
-
-        freudNoteInput.addEventListener(
-          "touchmove",
-          function (event) {
-            if (lastTouchY === null) return;
-
-            const currentY = event.touches?.[0]?.clientY ?? lastTouchY;
-            const deltaY = lastTouchY - currentY;
-
-            notesCard.scrollTop += deltaY;
-            lastTouchY = currentY;
-
-            event.preventDefault();
-          },
-          { passive: false },
-        );
-      }*/
 
       freudNoteInput.addEventListener("input", function () {
         updateFreudNoteCountdown();
@@ -3222,7 +3143,7 @@ I’ll be waiting for you there 💚`,
       function updateFreudNoteCountdown() {
         if (!freudNoteCountdown || !freudNoteInput) return;
 
-        const allTimedNotes = getAllTimedNotes(freudNoteInput.innerText);
+        const allTimedNotes = getAllTimedNotes(freudNoteInput.value);
         const nextTimed = allTimedNotes[0] || null;
 
         if (!nextTimed) {
@@ -3268,14 +3189,12 @@ I’ll be waiting for you there 💚`,
         const note = loadFreudNotePad();
 
         if (!note) {
-          freudNoteInput.innerText = "";
+          freudNoteInput.value = "";
           freudNoteSavedAt.textContent = "Not saved yet";
-
           return;
         }
 
-        freudNoteInput.innerText = note.text || "";
-
+        freudNoteInput.value = note.text || "";
         freudNoteSavedAt.textContent = `Last saved: ${new Date(
           note.updatedAt || note.createdAt,
         ).toLocaleString()}`;
@@ -3363,7 +3282,7 @@ I’ll be waiting for you there 💚`,
         freudNoteSavedAt.textContent = "Saving locally...";
 
         freudNoteAutoSaveTimer = setTimeout(() => {
-          const text = freudNoteInput.innerText || "";
+          const text = freudNoteInput.value || "";
           const existing = loadFreudNotePad();
 
           const note = {
@@ -3399,6 +3318,7 @@ I’ll be waiting for you there 💚`,
         renderFreudNotes();
         await loadFreudNoteFromCloud();
         startFreudNoteCountdown();
+        freudNoteInput.focus();
       };
 
       window.closeNotesPanel = function () {
@@ -3410,7 +3330,7 @@ I’ll be waiting for you there 💚`,
       };
 
       window.saveFreudNote = async function () {
-        const text = freudNoteInput.innerText.trim();
+        const text = freudNoteInput.value.trim();
 
         if (!text) return;
 
