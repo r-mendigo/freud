@@ -3377,7 +3377,8 @@ I’ll be waiting for you there 💚`,
         renderFreudNotes();
         await loadFreudNoteFromCloud();
         startFreudNoteCountdown();
-        freudNoteInput.focus();
+        bindFreudNoteScrollBridge();
+        resizeFreudNoteInput();
       };
 
       window.closeNotesPanel = function () {
