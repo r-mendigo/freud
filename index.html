@@ -3352,12 +3352,16 @@ I’ll be waiting for you there 💚`,
         if (currentUser) {
           authOpenBtn.textContent = "📝";
           authOpenBtn.title = "Notes";
-          authOpenBtn.onclick = openNotesPanel;
+          authOpenBtn.onclick = () => window.openNotesPanel();
 
           authSignOutBtn.style.display = "inline-flex";
           clearChatBtn.style.display = "inline-flex";
           appShell.style.display = "flex";
-          hideAuthModal();
+
+          if (typeof window.hideAuthModal === "function") {
+            window.hideAuthModal();
+          }
+
           memory = loadStructuredMemory();
           chatHistory = normalizeChatHistory(
             JSON.parse(localStorage.getItem(getStorageKeys().chat) || "[]"),
@@ -3367,7 +3371,7 @@ I’ll be waiting for you there 💚`,
         } else {
           authOpenBtn.textContent = "👤";
           authOpenBtn.title = "Sign in";
-          authOpenBtn.onclick = showAuthModal;
+          authOpenBtn.onclick = () => window.showAuthModal();
 
           authSignOutBtn.style.display = "none";
           clearChatBtn.style.display = "none";
