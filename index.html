@@ -9,7 +9,6 @@
 
     <link rel="icon" type="image/png" href="icon-1024.png" />
     <link rel="apple-touch-icon" href="icon-1024.png" />
-    <link rel="manifest" href="manifest.json" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta
       name="apple-mobile-web-app-status-bar-style"
@@ -191,8 +190,7 @@
         font-size: 16px;
         outline: none;
         resize: none;
-        overflow-y: auto;
-        overflow-x: hidden;
+        overflow: hidden;
         transition:
           height 0.18s ease,
           box-shadow 0.18s ease,
@@ -633,24 +631,6 @@
         display: grid;
         gap: 10px;
         padding-bottom: env(safe-area-inset-bottom);
-
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-      }
-
-      .notes-list::-webkit-scrollbar {
-        width: 0;
-        height: 0;
-        display: none;
-      }
-
-      .notes-input {
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-      }
-
-      .notes-input::-webkit-scrollbar {
-        display: none;
       }
 
       .note-card {
@@ -681,24 +661,13 @@
       }
 
       .notes-card .notes-input {
-        flex: 1 1 auto;
+        flex: 1;
         min-height: 0;
         width: 100%;
         border-radius: 0;
         margin: 0;
         background: transparent;
         padding: 18px;
-        overflow-y: auto;
-        overflow-x: hidden;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-      }
-
-      .notes-card .notes-input::-webkit-scrollbar {
-        width: 0;
-        height: 0;
-        display: none;
       }
 
       .notes-bottom-row {
@@ -820,28 +789,6 @@
         display: block;
         color: var(--muted);
         margin-top: 2px;
-      }
-      /* FREUD NOTES — hide all internal scrollbars but keep scrolling */
-      #notesDrawer,
-      #notesDrawer *,
-      .notes-card,
-      .notes-card *,
-      #freudNoteInput,
-      #freudTimedNotesList {
-        scrollbar-width: none !important;
-        -ms-overflow-style: none !important;
-      }
-
-      #notesDrawer::-webkit-scrollbar,
-      #notesDrawer *::-webkit-scrollbar,
-      .notes-card::-webkit-scrollbar,
-      .notes-card *::-webkit-scrollbar,
-      #freudNoteInput::-webkit-scrollbar,
-      #freudTimedNotesList::-webkit-scrollbar {
-        width: 0 !important;
-        height: 0 !important;
-        display: none !important;
-        background: transparent !important;
       }
     </style>
   </head>
@@ -1057,19 +1004,6 @@ I’ll be waiting for you there 💚`,
       })();
     </script>
 
-    <script>
-      if ("serviceWorker" in navigator && location.protocol !== "file:") {
-        window.addEventListener("load", () => {
-          navigator.serviceWorker
-            .register("./service-worker.js")
-            .then(() => console.log("Freud offline mode ready 💚"))
-            .catch((error) =>
-              console.warn("Freud offline mode failed:", error),
-            );
-        });
-      }
-    </script>
-
     <script type="module">
       import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
       // Groq cloud brain enabled.
@@ -1156,8 +1090,6 @@ I’ll be waiting for you there 💚`,
         "freudTimedNotesList",
       );
       let freudNoteCountdownTimer = null;
-      let freudNoteAutoSaveTimer = null;
-      let freudNoteCloudSaveTimer = null;
 
       const FREUD_NOTES_BASE_KEY = "freud_notes_local_v1";
 
@@ -1223,7 +1155,6 @@ I’ll be waiting for you there 💚`,
 
       freudNoteInput.addEventListener("input", function () {
         updateFreudNoteCountdown();
-        scheduleFreudNoteAutoSave();
       });
 
       // Enter = send, Shift+Enter = new line
@@ -3258,61 +3189,6 @@ I’ll be waiting for you there 💚`,
         ).toLocaleString()}`;
       }
 
-      function saveFreudNotePad(note) {
-        localStorage.setItem(getFreudNotesStorageKey(), JSON.stringify(note));
-      }
-
-      function loadFreudNotePad() {
-        try {
-          return JSON.parse(
-            localStorage.getItem(getFreudNotesStorageKey()) || "null",
-          );
-        } catch {
-          return null;
-        }
-      }
-
-      function scheduleFreudNoteAutoSave() {
-        if (!freudNoteInput) return;
-
-        if (freudNoteAutoSaveTimer) {
-          clearTimeout(freudNoteAutoSaveTimer);
-        }
-
-        freudNoteSavedAt.textContent = "Saving locally...";
-
-        freudNoteAutoSaveTimer = setTimeout(() => {
-          const text = freudNoteInput.value || "";
-          const existing = loadFreudNotePad();
-
-          const note = {
-            id: existing?.id || currentUser?.id || "local-note",
-            text,
-            createdAt: existing?.createdAt || Date.now(),
-            updatedAt: Date.now(),
-          };
-
-          saveFreudNotePad(note);
-          freudNoteSavedAt.textContent = `Auto-saved: ${new Date(
-            note.updatedAt,
-          ).toLocaleString()}`;
-
-          scheduleFreudNoteCloudSave(note);
-        }, 600);
-      }
-
-      function scheduleFreudNoteCloudSave(note) {
-        if (!currentUser || !navigator.onLine) return;
-
-        if (freudNoteCloudSaveTimer) {
-          clearTimeout(freudNoteCloudSaveTimer);
-        }
-
-        freudNoteCloudSaveTimer = setTimeout(() => {
-          saveFreudNoteToCloud(note);
-        }, 1800);
-      }
-
       window.openNotesPanel = async function () {
         notesDrawer.classList.add("open");
         renderFreudNotes();
@@ -3352,16 +3228,12 @@ I’ll be waiting for you there 💚`,
         if (currentUser) {
           authOpenBtn.textContent = "📝";
           authOpenBtn.title = "Notes";
-          authOpenBtn.onclick = () => window.openNotesPanel();
+          authOpenBtn.onclick = openNotesPanel;
 
           authSignOutBtn.style.display = "inline-flex";
           clearChatBtn.style.display = "inline-flex";
           appShell.style.display = "flex";
-
-          if (typeof window.hideAuthModal === "function") {
-            window.hideAuthModal();
-          }
-
+          hideAuthModal();
           memory = loadStructuredMemory();
           chatHistory = normalizeChatHistory(
             JSON.parse(localStorage.getItem(getStorageKeys().chat) || "[]"),
@@ -3371,7 +3243,7 @@ I’ll be waiting for you there 💚`,
         } else {
           authOpenBtn.textContent = "👤";
           authOpenBtn.title = "Sign in";
-          authOpenBtn.onclick = () => window.showAuthModal();
+          authOpenBtn.onclick = showAuthModal;
 
           authSignOutBtn.style.display = "none";
           clearChatBtn.style.display = "none";
