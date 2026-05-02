@@ -1,4 +1,4 @@
-const CACHE_NAME = "freud-offline-v1";
+const CACHE_NAME = "freud-offline-v2";
 
 const APP_SHELL = [
     "./",
