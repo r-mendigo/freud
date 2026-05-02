@@ -691,15 +691,18 @@
       }
 
       .notes-card .notes-input {
-        flex: 0 0 auto;
-        min-height: 420px;
+        flex: 1 1 auto;
+        min-height: 0;
         width: 100%;
         border-radius: 0;
         margin: 0;
         background: transparent;
         padding: 18px;
-        overflow: hidden;
-        resize: none;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        outline: none;
+        white-space: pre-wrap;
       }
 
       .notes-card .notes-input::-webkit-scrollbar {
@@ -981,11 +984,12 @@
       </div>
 
       <div class="notes-card">
-        <textarea
+        <div
           id="freudNoteInput"
           class="notes-input"
-          placeholder="Write a note, checklist, reminder, or memory..."
-        ></textarea>
+          contenteditable="true"
+          data-placeholder="Write a note, checklist, reminder, or memory..."
+        ></div>
 
         <div id="freudTimedNotesList" class="timed-notes-list"></div>
         <div class="notes-bottom-row">
@@ -1228,13 +1232,7 @@ I’ll be waiting for you there 💚`,
           beforeCursor.length + insertText.length;
       });
 
-      function resizeFreudNoteInput() {
-        if (!freudNoteInput) return;
-        freudNoteInput.style.height = "auto";
-        freudNoteInput.style.height = `${freudNoteInput.scrollHeight}px`;
-      }
-
-      function bindFreudNoteScrollBridge() {
+      /* function bindFreudNoteScrollBridge() {
         if (!freudNoteInput) return;
 
         const notesCard = freudNoteInput.closest(".notes-card");
@@ -1274,10 +1272,9 @@ I’ll be waiting for you there 💚`,
           },
           { passive: false },
         );
-      }
+      }*/
 
       freudNoteInput.addEventListener("input", function () {
-        resizeFreudNoteInput();
         updateFreudNoteCountdown();
         scheduleFreudNoteAutoSave();
       });
@@ -3199,7 +3196,7 @@ I’ll be waiting for you there 💚`,
       function updateFreudNoteCountdown() {
         if (!freudNoteCountdown || !freudNoteInput) return;
 
-        const allTimedNotes = getAllTimedNotes(freudNoteInput.value);
+        const allTimedNotes = getAllTimedNotes(freudNoteInput.innerText);
         const nextTimed = allTimedNotes[0] || null;
 
         if (!nextTimed) {
@@ -3245,14 +3242,13 @@ I’ll be waiting for you there 💚`,
         const note = loadFreudNotePad();
 
         if (!note) {
-          freudNoteInput.value = "";
+          freudNoteInput.innerText = "";
           freudNoteSavedAt.textContent = "Not saved yet";
-          resizeFreudNoteInput();
+
           return;
         }
 
-        freudNoteInput.value = note.text || "";
-        resizeFreudNoteInput();
+        freudNoteInput.innerText = note.text || "";
 
         freudNoteSavedAt.textContent = `Last saved: ${new Date(
           note.updatedAt || note.createdAt,
@@ -3341,7 +3337,7 @@ I’ll be waiting for you there 💚`,
         freudNoteSavedAt.textContent = "Saving locally...";
 
         freudNoteAutoSaveTimer = setTimeout(() => {
-          const text = freudNoteInput.value || "";
+          const text = freudNoteInput.innerText || "";
           const existing = loadFreudNotePad();
 
           const note = {
@@ -3377,8 +3373,6 @@ I’ll be waiting for you there 💚`,
         renderFreudNotes();
         await loadFreudNoteFromCloud();
         startFreudNoteCountdown();
-        bindFreudNoteScrollBridge();
-        resizeFreudNoteInput();
       };
 
       window.closeNotesPanel = function () {
@@ -3390,7 +3384,7 @@ I’ll be waiting for you there 💚`,
       };
 
       window.saveFreudNote = async function () {
-        const text = freudNoteInput.value.trim();
+        const text = freudNoteInput.innerText.trim();
 
         if (!text) return;
 
