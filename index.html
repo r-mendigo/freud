@@ -676,23 +676,30 @@
         background: rgba(255, 255, 255, 0.055);
         border: 1px solid rgba(212, 175, 55, 0.24);
         border-radius: 22px;
-        overflow: hidden;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
         backdrop-filter: blur(16px);
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      .notes-card::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+        display: none;
       }
 
       .notes-card .notes-input {
-        flex: 1 1 auto;
-        min-height: 0;
+        flex: 0 0 auto;
+        min-height: 420px;
         width: 100%;
         border-radius: 0;
         margin: 0;
         background: transparent;
         padding: 18px;
-        overflow-y: auto;
-        overflow-x: hidden;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
+        overflow: hidden;
+        resize: none;
       }
 
       .notes-card .notes-input::-webkit-scrollbar {
@@ -1221,7 +1228,14 @@ I’ll be waiting for you there 💚`,
           beforeCursor.length + insertText.length;
       });
 
+      function resizeFreudNoteInput() {
+        if (!freudNoteInput) return;
+        freudNoteInput.style.height = "auto";
+        freudNoteInput.style.height = `${freudNoteInput.scrollHeight}px`;
+      }
+
       freudNoteInput.addEventListener("input", function () {
+        resizeFreudNoteInput();
         updateFreudNoteCountdown();
         scheduleFreudNoteAutoSave();
       });
@@ -3191,10 +3205,13 @@ I’ll be waiting for you there 💚`,
         if (!note) {
           freudNoteInput.value = "";
           freudNoteSavedAt.textContent = "Not saved yet";
+          resizeFreudNoteInput();
           return;
         }
 
         freudNoteInput.value = note.text || "";
+        resizeFreudNoteInput();
+
         freudNoteSavedAt.textContent = `Last saved: ${new Date(
           note.updatedAt || note.createdAt,
         ).toLocaleString()}`;
