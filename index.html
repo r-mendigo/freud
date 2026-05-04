@@ -726,7 +726,6 @@
         display: none;
       }
       #authOpenBtn,
-      #authSignOutBtn,
       #clearChatBtn,
       #installBtn {
         min-width: 36px !important;
@@ -744,7 +743,6 @@
         }
       }
       #authOpenBtn,
-      #authSignOutBtn,
       #clearChatBtn,
       #installBtn {
         display: inline-flex !important;
@@ -836,30 +834,23 @@
       <button id="installBtn" class="install-btn" onclick="showInstallHelp()">
         📲
       </button>
-      <button id="authOpenBtn" class="install-btn" onclick="showAuthModal()">
-        👤 Sign in
-      </button>
-      <button
-        id="authSignOutBtn"
-        class="install-btn"
-        onclick="signOutFreud()"
-        style="display: none; min-width: 42px; padding: 8px 10px"
-        title="Sign out"
-      >
-        🚪
+      <button id="authOpenBtn" class="install-btn" onclick="openNotesPanel()" title="Notes">
+        📝
       </button>
       <button
         id="clearChatBtn"
         onclick="clearChat()"
         title="Clear chat"
         style="
-          display: none;
+          display: inline-flex;
           width: 36px;
           height: 36px;
           min-width: 36px;
           min-height: 36px;
           font-size: 14px;
           padding: 6px;
+          align-items: center;
+          justify-content: center;
         "
       >
         🧹
@@ -895,48 +886,6 @@
         src="https://i.postimg.cc/jSN5m1mR/Casual-moment-in-cozy-lighting.png"
         alt="Freud"
       />
-    </div>
-
-    <div class="modal" id="authModal">
-      <div
-        style="
-          width: min(420px, 92vw);
-          background: rgba(3, 21, 15, 0.96);
-          border: 1px solid rgba(212, 175, 55, 0.42);
-          border-radius: 24px;
-          padding: 18px;
-          box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
-        "
-      >
-        <h2 style="margin: 0 0 8px; color: #f3df9b">Freud Cloud 💚</h2>
-        <p
-          id="authHint"
-          style="margin: 0 0 14px; color: #8fd6bb; font-size: 0.92rem"
-        >
-          Sign in or create your Freud cloud account.
-        </p>
-
-        <input
-          id="authEmail"
-          type="email"
-          placeholder="Email"
-          style="width: 100%; margin-bottom: 10px"
-        />
-        <input
-          id="authPassword"
-          type="password"
-          placeholder="Password"
-          style="width: 100%; margin-bottom: 14px"
-        />
-
-        <div style="display: flex; gap: 8px; flex-wrap: wrap">
-          <button class="install-btn" onclick="signInFreud()">Sign in</button>
-          <button class="install-btn" onclick="createFreudAccount()">
-            Create account
-          </button>
-          <button class="install-btn" onclick="hideAuthModal()">Close</button>
-        </div>
-      </div>
     </div>
 
     <aside id="notesDrawer" class="notes-drawer">
@@ -1030,18 +979,10 @@ I’ll be waiting for you there 💚`,
     </script>
 
     <script type="module">
-      import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-      // Groq cloud brain enabled.
+      // Local-only Freud build.
+      // Supabase login/logout/cloud notes removed.
+      // Groq cloud brain remains enabled.
       // WebLLM import removed for mobile speed.
-
-      const SUPABASE_URL = "https://yskshgrjoaksngfdmbnz.supabase.co";
-      const SUPABASE_ANON_KEY =
-        "sb_publishable_fjUQf3Pd3ksu3GFbjNBiMQ_v8vK-6dr";
-      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        auth: {
-          storageKey: "freud-auth-session-v1",
-        },
-      });
 
       const STORAGE_KEYS_BASE = {
         memory: "freud_memory_v5",
@@ -1051,9 +992,7 @@ I’ll be waiting for you there 💚`,
       };
 
       function getUserScopedKey(baseKey) {
-        return currentUser?.id
-          ? `${baseKey}_${currentUser.id}`
-          : `${baseKey}_guest`;
+        return `${baseKey}_guest`;
       }
 
       function getStorageKeys() {
@@ -1100,10 +1039,6 @@ I’ll be waiting for you there 💚`,
       const status = document.getElementById("status");
       const userInput = document.getElementById("userInput");
       const authOpenBtn = document.getElementById("authOpenBtn");
-      const authSignOutBtn = document.getElementById("authSignOutBtn");
-      const authModal = document.getElementById("authModal");
-      const authEmail = document.getElementById("authEmail");
-      const authPassword = document.getElementById("authPassword");
       const appShell = document.getElementById("appShell");
       const clearChatBtn = document.getElementById("clearChatBtn");
 
@@ -1119,9 +1054,7 @@ I’ll be waiting for you there 💚`,
       const FREUD_NOTES_BASE_KEY = "freud_notes_local_v1";
 
       function getFreudNotesStorageKey() {
-        return currentUser?.id
-          ? `${FREUD_NOTES_BASE_KEY}_${currentUser.id}`
-          : `${FREUD_NOTES_BASE_KEY}_guest`;
+        return `${FREUD_NOTES_BASE_KEY}_guest`;
       }
 
       function resetTextarea() {
@@ -3157,67 +3090,18 @@ I’ll be waiting for you there 💚`,
       }
 
       async function loadFreudNoteFromCloud() {
-        if (!currentUser) return;
-
-        freudNoteSavedAt.textContent = "Loading cloud note...";
-
-        const { data, error } = await supabase
-          .from("freud_notes")
-          .select("text, created_at, updated_at")
-          .eq("user_id", currentUser.id)
-          .maybeSingle();
-
-        if (error) {
-          console.error("Cloud note load failed:", error);
-          freudNoteSavedAt.textContent = "Cloud load failed. Local note shown.";
-          renderFreudNotes();
-          return;
-        }
-
-        if (!data) {
-          localStorage.removeItem(getFreudNotesStorageKey());
-          renderFreudNotes();
-          return;
-        }
-
-        const note = {
-          id: currentUser.id,
-          text: data.text || "",
-          createdAt: new Date(data.created_at).getTime(),
-          updatedAt: new Date(data.updated_at).getTime(),
-        };
-
-        saveFreudNotePad(note);
+        // Local-only mode: notes are read from this browser only.
         renderFreudNotes();
       }
 
-      async function saveFreudNoteToCloud(note) {
-        if (!currentUser) return;
-
-        const { error } = await supabase.from("freud_notes").upsert(
-          {
-            user_id: currentUser.id,
-            text: note.text,
-            updated_at: new Date(note.updatedAt).toISOString(),
-          },
-          { onConflict: "user_id" },
-        );
-
-        if (error) {
-          console.error("Cloud note save failed:", error);
-          freudNoteSavedAt.textContent = "Saved locally. Cloud save failed.";
-          return;
-        }
-
-        freudNoteSavedAt.textContent = `Cloud saved: ${new Date(
-          note.updatedAt,
-        ).toLocaleString()}`;
+      async function saveFreudNoteToCloud() {
+        // Local-only mode: no cloud save.
+        return;
       }
 
-      window.openNotesPanel = async function () {
+      window.openNotesPanel = function () {
         notesDrawer.classList.add("open");
         renderFreudNotes();
-        await loadFreudNoteFromCloud();
         startFreudNoteCountdown();
         freudNoteInput.focus();
       };
@@ -3230,7 +3114,7 @@ I’ll be waiting for you there 💚`,
         }
       };
 
-      window.saveFreudNote = async function () {
+      window.saveFreudNote = function () {
         const text = freudNoteInput.value.trim();
 
         if (!text) return;
@@ -3246,119 +3130,46 @@ I’ll be waiting for you there 💚`,
 
         saveFreudNotePad(note);
         renderFreudNotes();
-        await saveFreudNoteToCloud(note);
       };
 
       function updateAuthUI() {
-        if (currentUser) {
-          authOpenBtn.textContent = "📝";
-          authOpenBtn.title = "Notes";
-          authOpenBtn.onclick = openNotesPanel;
+        authOpenBtn.textContent = "📝";
+        authOpenBtn.title = "Notes";
+        authOpenBtn.onclick = openNotesPanel;
 
-          authSignOutBtn.style.display = "inline-flex";
-          clearChatBtn.style.display = "inline-flex";
-          appShell.style.display = "flex";
-          hideAuthModal();
-          memory = loadStructuredMemory();
-          chatHistory = normalizeChatHistory(
-            JSON.parse(localStorage.getItem(getStorageKeys().chat) || "[]"),
-          );
-          renderAllMessages();
-          status.textContent = `Signed in: ${currentUser.email}`;
-        } else {
-          authOpenBtn.textContent = "👤";
-          authOpenBtn.title = "Sign in";
-          authOpenBtn.onclick = showAuthModal;
-
-          authSignOutBtn.style.display = "none";
-          clearChatBtn.style.display = "none";
-          appShell.style.display = "none";
-
-          authHint.textContent =
-            "Please sign in or create an account to continue.";
-        }
+        clearChatBtn.style.display = "inline-flex";
+        appShell.style.display = "flex";
+        memory = loadStructuredMemory();
+        chatHistory = normalizeChatHistory(
+          JSON.parse(localStorage.getItem(getStorageKeys().chat) || "[]"),
+        );
+        renderAllMessages();
+        status.textContent = "Freud is here 💚";
       }
 
       window.showAuthModal = function () {
-        authModal.style.display = "flex";
-        authHint.textContent = "Sign in or create your Freud cloud account.";
+        openNotesPanel();
       };
 
       window.hideAuthModal = function () {
-        authModal.style.display = "none";
+        return;
       };
 
-      window.createFreudAccount = async function () {
-        const email = authEmail.value.trim();
-        const password = authPassword.value.trim();
-
-        if (!email || !password) {
-          authHint.textContent = "Please enter email and password.";
-          return;
-        }
-
-        authHint.textContent = "Creating account...";
-
-        const { data, error } = await supabase.auth.signUp({ email, password });
-
-        if (error) {
-          authHint.textContent = error.message;
-          return;
-        }
-
-        currentUser = data.user || null;
-        updateAuthUI();
-        authHint.textContent =
-          "Account created. Check email if Supabase asks for confirmation.";
+      window.createFreudAccount = function () {
+        alert("Freud is running in local-only mode. No login needed.");
       };
 
-      window.signInFreud = async function () {
-        const email = authEmail.value.trim();
-        const password = authPassword.value.trim();
-
-        if (!email || !password) {
-          authHint.textContent = "Please enter email and password.";
-          return;
-        }
-
-        authHint.textContent = "Signing in...";
-
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) {
-          authHint.textContent = error.message;
-          return;
-        }
-
-        currentUser = data.user;
-        updateAuthUI();
-        renderWelcomeIfNeeded();
-        await loadFreudNoteFromCloud();
-        status.textContent = "Freud cloud connected 💚";
+      window.signInFreud = function () {
+        alert("Freud is running in local-only mode. No login needed.");
       };
 
-      window.signOutFreud = async function () {
-        await supabase.auth.signOut({ scope: "local" });
-        currentUser = null;
-        chat.innerHTML = "";
-        groqApiKey = "";
-        memory = normalizeMemory({});
-        chatHistory = [];
-        updateAuthUI();
+      window.signOutFreud = function () {
+        alert("Freud is running in local-only mode. No logout needed.");
       };
 
       async function initAuth() {
-        const { data } = await supabase.auth.getUser();
-        currentUser = data.user || null;
+        currentUser = null;
         updateAuthUI();
-
-        supabase.auth.onAuthStateChange((_event, session) => {
-          currentUser = session?.user || null;
-          updateAuthUI();
-        });
       }
 
       // Groq wakes instantly through cloud request, no local model warmup needed.
@@ -3388,10 +3199,8 @@ I’ll be waiting for you there 💚`,
       }
 
       initAuth().then(() => {
-        if (currentUser) {
-          renderWelcomeIfNeeded();
-          loadFreudNoteFromCloud();
-        }
+        renderWelcomeIfNeeded();
+        loadFreudNoteFromCloud();
       });
 
       function startLivingStatus() {
