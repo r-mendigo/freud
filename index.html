@@ -727,7 +727,8 @@
       }
       #authOpenBtn,
       #clearChatBtn,
-      #installBtn {
+      #installBtn,
+      #freudSecurityBtn {
         min-width: 36px !important;
         min-height: 36px !important;
         width: 36px !important;
@@ -744,7 +745,8 @@
       }
       #authOpenBtn,
       #clearChatBtn,
-      #installBtn {
+      #installBtn,
+      #freudSecurityBtn {
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -813,6 +815,189 @@
         color: var(--muted);
         margin-top: 2px;
       }
+      /* =========================================================
+   FREUD CENTER LOCK + SECURITY 01
+   ========================================================= */
+      .freud-lock-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 3000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background:
+          radial-gradient(
+            circle at 50% 28%,
+            rgba(212, 175, 55, 0.16),
+            transparent 32%
+          ),
+          linear-gradient(135deg, rgba(3, 21, 15, 0.96), rgba(11, 45, 34, 0.94));
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+      }
+
+      body.freud-locked {
+        overflow: hidden;
+      }
+
+      body.freud-locked .freud-lock-overlay {
+        display: flex;
+      }
+
+      .freud-lock-card {
+        width: min(420px, 92vw);
+        padding: 34px 26px;
+        border-radius: 28px;
+        background: rgba(255, 255, 255, 0.94);
+        color: #10251d;
+        border: 1px solid rgba(212, 175, 55, 0.32);
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.38);
+        text-align: center;
+      }
+
+      .freud-lock-icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 16px;
+        border-radius: 22px;
+        display: grid;
+        place-items: center;
+        font-size: 1.85rem;
+        background: linear-gradient(135deg, #e9c94f, #0fa968);
+        box-shadow: 0 12px 28px rgba(15, 169, 104, 0.2);
+      }
+
+      .freud-lock-card h2 {
+        margin: 0 0 8px;
+        font-size: 2rem;
+        line-height: 1.1;
+        color: #0b3d2b;
+      }
+
+      .freud-lock-card p {
+        margin: 0 0 20px;
+        color: #5f746b;
+        font-weight: 700;
+        line-height: 1.35;
+      }
+
+      .freud-lock-card input {
+        width: 100%;
+        height: 58px;
+        margin-bottom: 12px;
+        border-radius: 18px;
+        border: 1px solid rgba(11, 61, 43, 0.22);
+        background: #fff;
+        color: #10251d;
+        font-size: 1rem;
+        font-weight: 800;
+      }
+
+      .freud-lock-card input::placeholder {
+        color: rgba(16, 37, 29, 0.42);
+      }
+
+      .freud-lock-card .freud-lock-primary {
+        width: 100%;
+        border-radius: 18px;
+        min-height: 56px;
+        margin-top: 4px;
+        background: linear-gradient(135deg, #24b763, #129553);
+        color: white;
+        font-size: 1.05rem;
+        font-weight: 900;
+      }
+
+      .freud-lock-message {
+        min-height: 20px;
+        color: #b84d4d;
+        font-size: 0.86rem;
+        font-weight: 800;
+        margin: 2px 0 6px;
+      }
+
+      .freud-lock-link {
+        margin-top: 10px;
+        border: none;
+        background: transparent;
+        color: #5f746b;
+        font-weight: 900;
+        font-size: 0.85rem;
+        min-width: auto;
+        min-height: auto;
+        padding: 0;
+        border-radius: 0;
+      }
+
+      .freud-security-sheet {
+        position: fixed;
+        inset: 0;
+        z-index: 2500;
+        display: none;
+        align-items: flex-end;
+        justify-content: center;
+        padding: 16px;
+        background: rgba(0, 0, 0, 0.42);
+      }
+
+      .freud-security-sheet.open {
+        display: flex;
+      }
+
+      .freud-security-card {
+        width: min(420px, 100%);
+        padding: 16px;
+        border-radius: 24px;
+        background: rgba(3, 21, 15, 0.98);
+        border: 1px solid rgba(212, 175, 55, 0.32);
+        box-shadow: 0 -18px 54px rgba(0, 0, 0, 0.38);
+      }
+
+      .freud-security-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #f3df9b;
+        margin-bottom: 12px;
+      }
+
+      .freud-security-head span {
+        width: 40px;
+        height: 40px;
+        display: grid;
+        place-items: center;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #e0c15a, #c59b22);
+      }
+
+      .freud-security-head h3 {
+        margin: 0;
+        font-size: 1rem;
+      }
+
+      .freud-security-actions {
+        display: grid;
+        gap: 10px;
+      }
+
+      .freud-security-actions button {
+        width: 100%;
+        border-radius: 16px;
+        min-height: 46px;
+        font-size: 0.92rem;
+        font-weight: 900;
+      }
+
+      .freud-security-actions .danger {
+        background: linear-gradient(135deg, #c86a3a, #a94e2d);
+        color: #fff;
+      }
+
+      .freud-security-actions .secondary {
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--text);
+      }
     </style>
   </head>
   <body>
@@ -834,7 +1019,15 @@
       <button id="installBtn" class="install-btn" onclick="showInstallHelp()">
         📲
       </button>
-      <button id="authOpenBtn" class="install-btn" onclick="openNotesPanel()" title="Notes">
+      <button id="freudSecurityBtn" class="install-btn" title="Security">
+        🛡️
+      </button>
+      <button
+        id="authOpenBtn"
+        class="install-btn"
+        onclick="openNotesPanel()"
+        title="Notes"
+      >
         📝
       </button>
       <button
@@ -911,6 +1104,69 @@
         </div>
       </div>
     </aside>
+
+    <div class="freud-lock-overlay" id="freudLockOverlay">
+      <div class="freud-lock-card">
+        <div class="freud-lock-icon">🔐</div>
+        <h2 id="freudLockTitle">Freud Locked</h2>
+        <p id="freudLockSubtitle">Freud is locked.</p>
+
+        <input
+          id="freudLockPassword"
+          type="password"
+          placeholder="Password"
+          autocomplete="current-password"
+        />
+
+        <input
+          id="freudLockNew"
+          type="password"
+          placeholder="New password"
+          autocomplete="new-password"
+          style="display: none"
+        />
+
+        <input
+          id="freudLockConfirm"
+          type="password"
+          placeholder="Confirm password"
+          autocomplete="new-password"
+          style="display: none"
+        />
+
+        <div class="freud-lock-message" id="freudLockMessage"></div>
+
+        <button class="freud-lock-primary" id="freudLockSubmit" type="button">
+          Unlock
+        </button>
+
+        <button class="freud-lock-link" id="freudLockSkip" type="button">
+          Skip for now
+        </button>
+      </div>
+    </div>
+
+    <div class="freud-security-sheet" id="freudSecuritySheet">
+      <div class="freud-security-card">
+        <div class="freud-security-head">
+          <span>🛡️</span>
+          <h3>Security & Privacy</h3>
+        </div>
+
+        <div class="freud-security-actions">
+          <button id="freudChangePasswordBtn" type="button">
+            Change Password
+          </button>
+          <button id="freudDisablePasswordBtn" class="danger" type="button">
+            Disable Password
+          </button>
+          <button id="freudLockNowBtn" type="button">Lock Now</button>
+          <button id="freudSecurityCancelBtn" class="secondary" type="button">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
 
     <script>
       (function () {
@@ -1042,6 +1298,31 @@ I’ll be waiting for you there 💚`,
       const appShell = document.getElementById("appShell");
       const clearChatBtn = document.getElementById("clearChatBtn");
 
+      const freudSecurityBtn = document.getElementById("freudSecurityBtn");
+      const freudSecuritySheet = document.getElementById("freudSecuritySheet");
+      const freudChangePasswordBtn = document.getElementById(
+        "freudChangePasswordBtn",
+      );
+      const freudDisablePasswordBtn = document.getElementById(
+        "freudDisablePasswordBtn",
+      );
+      const freudLockNowBtn = document.getElementById("freudLockNowBtn");
+      const freudSecurityCancelBtn = document.getElementById(
+        "freudSecurityCancelBtn",
+      );
+
+      const FREUD_LOCK_KEY = "freudLockHash_v1";
+      const freudLockPassword = document.getElementById("freudLockPassword");
+      const freudLockNew = document.getElementById("freudLockNew");
+      const freudLockConfirm = document.getElementById("freudLockConfirm");
+      const freudLockTitle = document.getElementById("freudLockTitle");
+      const freudLockSubtitle = document.getElementById("freudLockSubtitle");
+      const freudLockMessage = document.getElementById("freudLockMessage");
+      const freudLockSubmit = document.getElementById("freudLockSubmit");
+      const freudLockSkip = document.getElementById("freudLockSkip");
+
+      let freudLockMode = "setup";
+
       const notesDrawer = document.getElementById("notesDrawer");
       const freudNoteInput = document.getElementById("freudNoteInput");
       const freudNoteSavedAt = document.getElementById("freudNoteSavedAt");
@@ -1055,6 +1336,167 @@ I’ll be waiting for you there 💚`,
 
       function getFreudNotesStorageKey() {
         return `${FREUD_NOTES_BASE_KEY}_guest`;
+      }
+      async function hashFreudPassword(password) {
+        const encoded = new TextEncoder().encode(`Freud::${password}`);
+        const digest = await crypto.subtle.digest("SHA-256", encoded);
+        return Array.from(new Uint8Array(digest))
+          .map((byte) => byte.toString(16).padStart(2, "0"))
+          .join("");
+      }
+
+      function openFreudLock(mode = "auto") {
+        const hasPassword = Boolean(localStorage.getItem(FREUD_LOCK_KEY));
+
+        freudLockMode =
+          mode === "auto" ? (hasPassword ? "unlock" : "setup") : mode;
+
+        document.body.classList.add("freud-locked");
+
+        freudLockPassword.value = "";
+        freudLockNew.value = "";
+        freudLockConfirm.value = "";
+        freudLockMessage.textContent = "";
+
+        freudLockNew.style.display = "none";
+        freudLockConfirm.style.display = "none";
+        freudLockSkip.style.display = "none";
+
+        if (freudLockMode === "setup") {
+          freudLockTitle.textContent = "Lock Freud";
+          freudLockSubtitle.textContent =
+            "Create a local password for this device.";
+          freudLockPassword.placeholder = "Password";
+          freudLockConfirm.placeholder = "Confirm password";
+          freudLockConfirm.style.display = "block";
+          freudLockSkip.textContent = "Skip for now";
+          freudLockSkip.style.display = "inline-block";
+          freudLockSubmit.textContent = "Save Password";
+        }
+
+        if (freudLockMode === "unlock") {
+          freudLockTitle.textContent = "Freud Locked";
+          freudLockSubtitle.textContent = "Freud is locked.";
+          freudLockPassword.placeholder = "Password";
+          freudLockSubmit.textContent = "Unlock";
+        }
+
+        if (freudLockMode === "change") {
+          freudLockTitle.textContent = "Change Password";
+          freudLockSubtitle.textContent =
+            "Enter your current password, then choose a new one.";
+          freudLockPassword.placeholder = "Current password";
+          freudLockNew.placeholder = "New password";
+          freudLockConfirm.placeholder = "Confirm new password";
+          freudLockNew.style.display = "block";
+          freudLockConfirm.style.display = "block";
+          freudLockSkip.textContent = "Cancel";
+          freudLockSkip.style.display = "inline-block";
+          freudLockSubmit.textContent = "Change Password";
+        }
+
+        if (freudLockMode === "disable") {
+          freudLockTitle.textContent = "Disable Password";
+          freudLockSubtitle.textContent =
+            "Enter your current password before removing protection.";
+          freudLockPassword.placeholder = "Current password";
+          freudLockSkip.textContent = "Cancel";
+          freudLockSkip.style.display = "inline-block";
+          freudLockSubmit.textContent = "Disable Password";
+        }
+
+        setTimeout(() => freudLockPassword.focus(), 180);
+      }
+
+      function closeFreudLock() {
+        document.body.classList.remove("freud-locked");
+        freudLockPassword.value = "";
+        freudLockNew.value = "";
+        freudLockConfirm.value = "";
+        freudLockMessage.textContent = "";
+      }
+
+      async function handleFreudLockSubmit() {
+        const existingHash = localStorage.getItem(FREUD_LOCK_KEY);
+        const password = freudLockPassword.value.trim();
+        const newPassword = freudLockNew.value.trim();
+        const confirmPassword = freudLockConfirm.value.trim();
+
+        if (freudLockMode === "setup") {
+          if (password.length < 4) {
+            freudLockMessage.textContent = "Use at least 4 characters.";
+            return;
+          }
+
+          if (password !== confirmPassword) {
+            freudLockMessage.textContent = "Passwords do not match.";
+            return;
+          }
+
+          localStorage.setItem(
+            FREUD_LOCK_KEY,
+            await hashFreudPassword(password),
+          );
+          closeFreudLock();
+          return;
+        }
+
+        if (!existingHash) {
+          freudLockMessage.textContent = "No password is set yet.";
+          return;
+        }
+
+        if (password.length < 4) {
+          freudLockMessage.textContent = "Enter your current password.";
+          return;
+        }
+
+        const currentHash = await hashFreudPassword(password);
+
+        if (currentHash !== existingHash) {
+          freudLockMessage.textContent = "Wrong password.";
+          return;
+        }
+
+        if (freudLockMode === "unlock") {
+          closeFreudLock();
+          return;
+        }
+
+        if (freudLockMode === "disable") {
+          localStorage.removeItem(FREUD_LOCK_KEY);
+          closeFreudLock();
+          alert("Freud password disabled on this device.");
+          return;
+        }
+
+        if (freudLockMode === "change") {
+          if (newPassword.length < 4) {
+            freudLockMessage.textContent =
+              "Use at least 4 characters for new password.";
+            return;
+          }
+
+          if (newPassword !== confirmPassword) {
+            freudLockMessage.textContent = "New passwords do not match.";
+            return;
+          }
+
+          localStorage.setItem(
+            FREUD_LOCK_KEY,
+            await hashFreudPassword(newPassword),
+          );
+          closeFreudLock();
+          alert("Freud password changed.");
+        }
+      }
+
+      function openFreudSecuritySheet() {
+        freudSecuritySheet.classList.add("open");
+      }
+
+      function closeFreudSecuritySheet() {
+        freudSecuritySheet.classList.remove("open");
       }
 
       function resetTextarea() {
@@ -3137,13 +3579,17 @@ I’ll be waiting for you there 💚`,
         authOpenBtn.title = "Notes";
         authOpenBtn.onclick = openNotesPanel;
 
+        freudSecurityBtn.textContent = "🛡️";
+        freudSecurityBtn.title = "Security";
+        freudSecurityBtn.onclick = openFreudSecuritySheet;
+
         clearChatBtn.style.display = "inline-flex";
         appShell.style.display = "flex";
         memory = loadStructuredMemory();
         chatHistory = normalizeChatHistory(
           JSON.parse(localStorage.getItem(getStorageKeys().chat) || "[]"),
         );
-        renderAllMessages();
+        requestAnimationFrame(renderAllMessages);
         status.textContent = "Freud is here 💚";
       }
 
@@ -3180,6 +3626,51 @@ I’ll be waiting for you there 💚`,
         );
       };
 
+      freudLockSubmit.addEventListener("click", handleFreudLockSubmit);
+      freudLockSkip.addEventListener("click", closeFreudLock);
+
+      freudLockPassword.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") handleFreudLockSubmit();
+      });
+
+      freudLockNew.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") handleFreudLockSubmit();
+      });
+
+      freudLockConfirm.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") handleFreudLockSubmit();
+      });
+
+      freudSecurityBtn.addEventListener("click", openFreudSecuritySheet);
+      freudSecurityCancelBtn.addEventListener("click", closeFreudSecuritySheet);
+
+      freudChangePasswordBtn.addEventListener("click", () => {
+        closeFreudSecuritySheet();
+
+        if (!localStorage.getItem(FREUD_LOCK_KEY)) {
+          openFreudLock("setup");
+          return;
+        }
+
+        openFreudLock("change");
+      });
+
+      freudDisablePasswordBtn.addEventListener("click", () => {
+        closeFreudSecuritySheet();
+
+        if (!localStorage.getItem(FREUD_LOCK_KEY)) {
+          alert("No password is currently set.");
+          return;
+        }
+
+        openFreudLock("disable");
+      });
+
+      freudLockNowBtn.addEventListener("click", () => {
+        closeFreudSecuritySheet();
+        openFreudLock("auto");
+      });
+
       window.clearChat = function () {
         chatHistory = chatHistory.filter((msg) => msg.starred);
         saveChatHistory();
@@ -3187,20 +3678,22 @@ I’ll be waiting for you there 💚`,
         status.textContent = "Freud kept your starred messages safe ⭐";
       };
 
+      // Show lock immediately before heavier UI rendering.
+      if (localStorage.getItem(FREUD_LOCK_KEY)) {
+        openFreudLock("unlock");
+      }
+
       // remove old blank messages that created action-only bubbles
       chatHistory = chatHistory.filter((msg) =>
         String(msg.content || "").trim(),
       );
       saveChatHistory();
 
-      // restore previous chat after reload
-      if (chatHistory.length > 0) {
-        renderAllMessages();
-      }
-
       initAuth().then(() => {
-        renderWelcomeIfNeeded();
-        loadFreudNoteFromCloud();
+        setTimeout(() => {
+          renderWelcomeIfNeeded();
+          loadFreudNoteFromCloud();
+        }, 60);
       });
 
       function startLivingStatus() {
