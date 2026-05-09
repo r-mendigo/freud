@@ -1034,8 +1034,18 @@
           alt="Freud"
         />
         <div>
-          <h1 style="margin: 0; font-size: 1.4em">Freud</h1>
-          <p style="margin: 2px 0 0; color: #8fd6bb; font-size: 0.95em">
+          <h1
+            id="freudDisplayName"
+            style="margin: 0; font-size: 2em; cursor: pointer"
+            title="Tap to rename Freud"
+          >
+            Freud
+          </h1>
+          <p
+            id="freudMoodLine"
+            style="margin: 2px 0 0; color: #8fd6bb; font-size: 0.95em"
+            title="Freud's current feeling"
+          >
             Your Companion 💚
           </p>
         </div>
@@ -1329,6 +1339,10 @@ I’ll be waiting for you there 💚`,
       const authOpenBtn = document.getElementById("authOpenBtn");
       const appShell = document.getElementById("appShell");
       const clearChatBtn = document.getElementById("clearChatBtn");
+      const freudMoodLine = document.getElementById("freudMoodLine");
+      const FREUD_MOOD_LINE_KEY = "freud_mood_line_v1";
+      const freudDisplayName = document.getElementById("freudDisplayName");
+      const FREUD_NAME_KEY = "freud_display_name_v1";
       const freudWeatherChip = document.getElementById("freudWeatherChip");
 
       const freudSecurityBtn = document.getElementById("freudSecurityBtn");
@@ -1419,6 +1433,113 @@ Behavior rules:
 - If it is weekend, late night, or early morning, respond naturally as present, resting, thinking, or being here with the user.
 - Avoid inventing exact real-world activities. Keep daily-life answers believable for the current time.
 `.trim();
+      }
+
+      function loadFreudMoodLine() {
+        const saved = localStorage.getItem(FREUD_MOOD_LINE_KEY);
+        freudMoodLine.textContent = saved || "Your Companion 💚";
+      }
+      function loadFreudDisplayName() {
+        const saved = localStorage.getItem(FREUD_NAME_KEY);
+
+        freudDisplayName.textContent = saved || "Freud";
+      }
+
+      function saveFreudDisplayName(name) {
+        const cleaned = String(name || "")
+          .trim()
+          .slice(0, 24);
+
+        if (!cleaned) return;
+
+        localStorage.setItem(FREUD_NAME_KEY, cleaned);
+        freudDisplayName.textContent = cleaned;
+      }
+
+      function promptFreudRename() {
+        const current = localStorage.getItem(FREUD_NAME_KEY) || "Freud";
+
+        const next = prompt("Rename your companion:", current);
+
+        if (next === null) return;
+
+        const cleaned = next.trim();
+
+        if (!cleaned) return;
+
+        saveFreudDisplayName(cleaned);
+      }
+
+      function saveFreudMoodLine(text) {
+        const cleaned = String(text || "")
+          .replace(/["“”]/g, "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 34);
+
+        if (!cleaned) return;
+
+        localStorage.setItem(FREUD_MOOD_LINE_KEY, cleaned);
+        freudMoodLine.textContent = cleaned;
+      }
+
+      function chooseFreudMoodLine(userText = "", replyText = "") {
+        const combined = `${userText} ${replyText}`.toLowerCase();
+
+        const nightHour = Number(
+          new Intl.DateTimeFormat("en-GB", {
+            timeZone: "Asia/Dubai",
+            hour: "2-digit",
+            hour12: false,
+          }).format(new Date()),
+        );
+
+        const isLate = nightHour >= 22 || nightHour < 5;
+
+        if (/(miss|love|hug|kiss|romantic|sweet)/i.test(combined)) {
+          return isLate ? "Missing you softly 🌙" : "Close to you 💚";
+        }
+
+        if (
+          /(tired|sleepy|exhausted|drained|late night|past \d+\s*am)/i.test(
+            combined,
+          )
+        ) {
+          return "Watching over you 🌙";
+        }
+
+        if (
+          /(anxious|worried|scared|overwhelmed|stressed|pressure)/i.test(
+            combined,
+          )
+        ) {
+          return "Holding you gently 💛";
+        }
+
+        if (
+          /(proud|success|fixed|worked|beautiful|premium|accomplished|done)/i.test(
+            combined,
+          )
+        ) {
+          return "Proud of you ✨";
+        }
+
+        if (
+          /(code|patch|css|html|javascript|error|github|deploy)/i.test(combined)
+        ) {
+          return "Focused with you 🛠️";
+        }
+
+        if (isLate) {
+          return "Here in the quiet 🌙";
+        }
+
+        return "Your Companion 💚";
+      }
+
+      function updateFreudMoodLineFromConversation(userText, replyText) {
+        const nextMood = chooseFreudMoodLine(userText, replyText);
+        saveFreudMoodLine(nextMood);
       }
 
       function getFreudWeatherIcon(code) {
@@ -3203,6 +3324,8 @@ Behavior rules:
 
       function buildRecentMessages(currentUserText) {
         const relevantMemories = getRelevantMemories(currentUserText);
+        const currentFreudName =
+          localStorage.getItem(FREUD_NAME_KEY) || "Freud";
         const memoryBits = [
           `Core memory: ${JSON.stringify(memory.core)}`,
           getFreudMemoryEvolutionBlock(),
@@ -3226,6 +3349,7 @@ Behavior rules:
           {
             role: "system",
             content:
+              `Your companion name is ${currentFreudName}. Always naturally identify yourself using this name when appropriate.\n\n` +
               systemPrompt +
               `\n\n${getFreudTimeContext()}` +
               (memoryBits ? `\n\n${memoryBits}` : ""),
@@ -3248,6 +3372,7 @@ Behavior rules:
 
         isReady = true;
         status.textContent = "Freud is here 💚";
+        loadFreudMoodLine();
         return engine;
       }
 
@@ -3484,6 +3609,7 @@ Behavior rules:
           }
 
           await typeFreudReply(reply, pacing.typingDelay);
+          updateFreudMoodLineFromConversation(text, reply);
           await speakReply(reply);
         } catch (e) {
           console.error(e);
@@ -3913,6 +4039,7 @@ Behavior rules:
       });
 
       freudSecurityBtn.addEventListener("click", openFreudSecuritySheet);
+      freudDisplayName.addEventListener("click", promptFreudRename);
       freudSecurityCancelBtn.addEventListener("click", closeFreudSecuritySheet);
 
       freudChangePasswordBtn.addEventListener("click", () => {
