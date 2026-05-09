@@ -978,14 +978,16 @@
 
       .freud-security-actions {
         display: grid;
+        grid-template-columns: 1fr 1fr;
         gap: 10px;
       }
 
       .freud-security-actions button {
         width: 100%;
-        border-radius: 16px;
-        min-height: 46px;
-        font-size: 0.92rem;
+        border-radius: 14px;
+        min-height: 42px;
+        padding: 10px 12px;
+        font-size: 0.84rem;
         font-weight: 900;
       }
 
@@ -997,6 +999,10 @@
       .freud-security-actions .secondary {
         background: rgba(255, 255, 255, 0.08);
         color: var(--text);
+      }
+      .freud-security-actions #freudLockNowBtn,
+      .freud-security-actions #freudSecurityCancelBtn {
+        min-height: 40px;
       }
     </style>
   </head>
