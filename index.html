@@ -2760,6 +2760,11 @@ Behavior rules:
           return;
         }
 
+        if (message.role === "user" && message.isVoiceNote) {
+          renderUserVoiceNote(message);
+          return;
+        }
+
         const { contentWrap } = createMessageElement(message);
 
         if (message.role === "user") {
@@ -2914,6 +2919,58 @@ Behavior rules:
         setTimeout(() => speakVoiceNoteText(content, bubble), 250);
 
         return message;
+      }
+
+      function addUserVoiceNote(content) {
+        const message = {
+          id: generateId(),
+          role: "user",
+          content,
+          isVoice: true,
+          isVoiceNote: true,
+          starred: false,
+          createdAt: Date.now(),
+        };
+
+        chatHistory.push(message);
+        archiveOverflowChat();
+        saveChatHistory();
+
+        renderUserVoiceNote(message);
+
+        return message;
+      }
+
+      function renderUserVoiceNote(message) {
+        const { div, contentWrap } = createMessageElement(message);
+
+        contentWrap.innerHTML = `
+    <div class="voice-note-bubble" data-voice-text="${escapeHtml(message.content)}">
+      <button class="voice-note-play" type="button">▶</button>
+      <div class="voice-note-main">
+        <div class="voice-wave">${createVoiceWave()}</div>
+        <div class="voice-note-meta">
+          <span>${estimateVoiceDuration(message.content)}</span>
+          <span>Your voice</span>
+        </div>
+      </div>
+      <span style="font-size: 1.25rem;">🎤</span>
+    </div>
+  `;
+
+        const bubble = contentWrap.querySelector(".voice-note-bubble");
+        const playBtn = contentWrap.querySelector(".voice-note-play");
+
+        playBtn.addEventListener("click", (event) => {
+          event.stopPropagation();
+          speakVoiceNoteText(message.content, bubble);
+        });
+
+        if (!userScrolledUp) {
+          chat.scrollTop = chat.scrollHeight;
+        }
+
+        return bubble;
       }
 
       function addTypingBubble() {
@@ -4029,9 +4086,14 @@ Behavior rules:
             removeTemporaryBubble(typingBubble);
           }
 
-          await typeFreudReply(reply, pacing.typingDelay);
-          updateFreudMoodLineFromConversation(text, reply);
-          await speakReply(reply);
+          if (lastInputWasVoice) {
+            updateFreudMoodLineFromConversation(text, reply);
+            await speakReply(reply);
+          } else {
+            await typeFreudReply(reply, pacing.typingDelay);
+            updateFreudMoodLineFromConversation(text, reply);
+            await speakReply(reply);
+          }
         } catch (e) {
           console.error(e);
 
@@ -4087,7 +4149,11 @@ Behavior rules:
         isGenerating = true;
         lastInputWasVoice = isVoiceInput;
 
-        addMessage("user", text, isVoiceInput, false);
+        if (isVoiceInput) {
+          addUserVoiceNote(text);
+        } else {
+          addMessage("user", text, false, false);
+        }
         userInput.value = "";
         resetTextarea();
         status.textContent = "Freud is here ❤️";
