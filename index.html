@@ -4161,9 +4161,16 @@ Behavior rules:
           return;
         }
 
+        // Second tap = stop and send
         if (recognition) {
           voiceShouldSendOnEnd = true;
-          recognition.stop();
+
+          try {
+            recognition.stop();
+          } catch (err) {
+            console.warn("Recognition stop blocked:", err);
+          }
+
           return;
         }
 
@@ -4175,43 +4182,34 @@ Behavior rules:
         )();
         recognition.lang = "en-US";
         recognition.interimResults = true;
-        recognition.continuous = false;
+        recognition.continuous = true;
 
         startVoiceRecordingUI();
+        status.textContent = "Freud is listening 🎤";
 
         recognition.onresult = (event) => {
-          const transcript = Array.from(event.results)
-            .map((result) => result[0].transcript)
-            .join("")
-            .trim();
+          let transcript = "";
 
-          if (!transcript) return;
+          for (let i = 0; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript + " ";
+          }
 
-          pendingVoiceTranscript = transcript;
+          pendingVoiceTranscript = transcript.trim();
 
-          status.textContent = "Voice captured 💚";
-
-          // Put transcript into normal textarea
-          userInput.value = transcript;
-
-          // Make textarea resize correctly
-          userInput.dispatchEvent(new Event("input"));
-
-          // Stop recording UI
-          stopVoiceRecordingUI();
-
-          // Send exactly like typed message
-          sendMessage();
+          if (pendingVoiceTranscript) {
+            status.textContent = "Voice captured — tap 🎤 to send 💚";
+          }
         };
 
         recognition.onspeechend = () => {
-          voiceShouldSendOnEnd = true;
-          recognition.stop();
+          // Do nothing. User controls when to send by tapping 🎤 again.
+          status.textContent = pendingVoiceTranscript
+            ? "Voice captured — tap 🎤 to send 💚"
+            : "Freud is still listening 🎤";
         };
 
         recognition.onerror = (event) => {
           console.warn("Freud voice recognition error:", event);
-          stopVoiceRecordingUI();
 
           if (event.error === "not-allowed") {
             alert("Microphone permission was blocked.");
@@ -4221,34 +4219,30 @@ Behavior rules:
             status.textContent = "Voice listening interrupted 🎤";
           }
 
+          stopVoiceRecordingUI();
           recognition = null;
+          voiceShouldSendOnEnd = false;
         };
 
         recognition.onend = () => {
-          stopVoiceRecordingUI();
-
           const transcript = pendingVoiceTranscript.trim();
+          const shouldSend = voiceShouldSendOnEnd && transcript;
+
+          stopVoiceRecordingUI();
 
           recognition = null;
           voiceShouldSendOnEnd = false;
 
-          if (!transcript) {
-            status.textContent = "I didn't hear anything 💚";
+          if (!shouldSend) {
+            if (!transcript) status.textContent = "I didn't hear anything 💚";
             return;
           }
 
-          status.textContent = "Voice captured 💚";
-
-          // Inject transcript into normal message flow
           userInput.value = transcript;
-
-          // Trigger textarea auto-resize naturally
           userInput.dispatchEvent(new Event("input"));
 
-          // Clear pending voice cache
           pendingVoiceTranscript = "";
 
-          // Send exactly like typed message
           setTimeout(() => {
             sendMessage(true);
           }, 120);
