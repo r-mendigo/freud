@@ -1630,6 +1630,10 @@ I’ll be waiting for you there 💚`,
       let isRecordingVoice = false;
       let recordingSeconds = 0;
       let recordingTimer = null;
+      let voiceRecorder = null;
+      let voiceStream = null;
+      let voiceChunks = [];
+      let pendingUserVoiceAudioUrl = "";
 
       const chat = document.getElementById("chat");
       const status = document.getElementById("status");
@@ -2833,6 +2837,65 @@ Behavior rules:
         );
       }
 
+      async function startRealVoiceRecording() {
+        if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+          console.warn("MediaRecorder not available. Falling back to fake VN.");
+          return;
+        }
+
+        voiceChunks = [];
+        voiceStream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+
+        const mimeType = MediaRecorder.isTypeSupported("audio/mp4")
+          ? "audio/mp4"
+          : MediaRecorder.isTypeSupported("audio/webm")
+            ? "audio/webm"
+            : "";
+
+        voiceRecorder = mimeType
+          ? new MediaRecorder(voiceStream, { mimeType })
+          : new MediaRecorder(voiceStream);
+
+        voiceRecorder.ondataavailable = (event) => {
+          if (event.data && event.data.size > 0) {
+            voiceChunks.push(event.data);
+          }
+        };
+
+        voiceRecorder.start();
+      }
+
+      function stopRealVoiceRecording() {
+        return new Promise((resolve) => {
+          if (!voiceRecorder || voiceRecorder.state === "inactive") {
+            resolve("");
+            return;
+          }
+
+          voiceRecorder.onstop = () => {
+            const blob = new Blob(voiceChunks, {
+              type: voiceRecorder.mimeType || "audio/mp4",
+            });
+
+            const audioUrl = URL.createObjectURL(blob);
+
+            if (voiceStream) {
+              voiceStream.getTracks().forEach((track) => track.stop());
+            }
+
+            voiceRecorder = null;
+            voiceStream = null;
+            voiceChunks = [];
+
+            resolve(audioUrl);
+          };
+
+          voiceRecorder.stop();
+        });
+      }
+
       function estimateVoiceSeconds(text) {
         return Math.max(
           4,
@@ -2960,11 +3023,12 @@ Behavior rules:
         return message;
       }
 
-      function addUserVoiceNote(content) {
+      function addUserVoiceNote(content, audioUrl = "") {
         const message = {
           id: generateId(),
           role: "user",
           content,
+          audioUrl,
           isVoice: false,
           isVoiceNote: true,
           starred: false,
@@ -3000,8 +3064,37 @@ Behavior rules:
         const bubble = contentWrap.querySelector(".voice-note-bubble");
         const playBtn = contentWrap.querySelector(".voice-note-play");
 
+        let audio = null;
+
+        if (message.audioUrl) {
+          audio = new Audio(message.audioUrl);
+        }
+
+        function resetPlayButton() {
+          bubble.classList.remove("is-playing");
+          playBtn.textContent = "▶";
+        }
+
         playBtn.addEventListener("click", (event) => {
           event.stopPropagation();
+
+          if (audio) {
+            if (!audio.paused) {
+              audio.pause();
+              resetPlayButton();
+              return;
+            }
+
+            audio.currentTime = 0;
+            bubble.classList.add("is-playing");
+            playBtn.textContent = "Ⅱ";
+
+            audio.onended = resetPlayButton;
+            audio.onerror = resetPlayButton;
+            audio.play().catch(resetPlayButton);
+            return;
+          }
+
           speakVoiceNoteText(message.content, bubble);
         });
 
@@ -4189,7 +4282,8 @@ Behavior rules:
         lastInputWasVoice = isVoiceInput;
 
         if (isVoiceInput) {
-          addUserVoiceNote(text);
+          addUserVoiceNote(text, pendingUserVoiceAudioUrl);
+          pendingUserVoiceAudioUrl = "";
         } else {
           addMessage("user", text, false, false);
         }
@@ -4256,7 +4350,7 @@ Behavior rules:
         }
       };
 
-      window.toggleVoiceInput = function () {
+      window.toggleVoiceInput = async function () {
         if (
           !(
             "SpeechRecognition" in window || "webkitSpeechRecognition" in window
@@ -4266,7 +4360,7 @@ Behavior rules:
           return;
         }
 
-        // Second tap = stop and send
+        // Second tap = stop recording and send
         if (recognition) {
           voiceShouldSendOnEnd = true;
 
@@ -4276,11 +4370,42 @@ Behavior rules:
             console.warn("Recognition stop blocked:", err);
           }
 
+          pendingUserVoiceAudioUrl = await stopRealVoiceRecording();
+
+          const transcript = pendingVoiceTranscript.trim();
+
+          stopVoiceRecordingUI();
+
+          recognition = null;
+          voiceShouldSendOnEnd = false;
+
+          if (!transcript) {
+            status.textContent = "I didn't hear anything 💚";
+            return;
+          }
+
+          userInput.value = transcript;
+          userInput.dispatchEvent(new Event("input"));
+
+          pendingVoiceTranscript = "";
+
+          setTimeout(() => {
+            sendMessage(true);
+          }, 120);
+
           return;
         }
 
         pendingVoiceTranscript = "";
+        pendingUserVoiceAudioUrl = "";
         voiceShouldSendOnEnd = false;
+
+        try {
+          await startRealVoiceRecording();
+        } catch (err) {
+          console.warn("Real voice recording failed:", err);
+          status.textContent = "Voice recording unavailable 🎤";
+        }
 
         recognition = new (
           window.SpeechRecognition || window.webkitSpeechRecognition
@@ -4307,14 +4432,16 @@ Behavior rules:
         };
 
         recognition.onspeechend = () => {
-          // Do nothing. User controls when to send by tapping 🎤 again.
           status.textContent = pendingVoiceTranscript
             ? "Voice captured — tap 🎤 to send 💚"
             : "Freud is still listening 🎤";
         };
 
-        recognition.onerror = (event) => {
+        recognition.onerror = async (event) => {
           console.warn("Freud voice recognition error:", event);
+
+          await stopRealVoiceRecording();
+          stopVoiceRecordingUI();
 
           if (event.error === "not-allowed") {
             alert("Microphone permission was blocked.");
@@ -4324,33 +4451,12 @@ Behavior rules:
             status.textContent = "Voice listening interrupted 🎤";
           }
 
-          stopVoiceRecordingUI();
           recognition = null;
           voiceShouldSendOnEnd = false;
         };
 
         recognition.onend = () => {
-          const transcript = pendingVoiceTranscript.trim();
-          const shouldSend = voiceShouldSendOnEnd && transcript;
-
-          stopVoiceRecordingUI();
-
-          recognition = null;
-          voiceShouldSendOnEnd = false;
-
-          if (!shouldSend) {
-            if (!transcript) status.textContent = "I didn't hear anything 💚";
-            return;
-          }
-
-          userInput.value = transcript;
-          userInput.dispatchEvent(new Event("input"));
-
-          pendingVoiceTranscript = "";
-
-          setTimeout(() => {
-            sendMessage(true);
-          }, 120);
+          // Manual send happens on the second 🎤 tap.
         };
 
         try {
@@ -4360,10 +4466,6 @@ Behavior rules:
           stopVoiceRecordingUI();
           recognition = null;
         }
-      };
-
-      window.showPhotoModal = function () {
-        document.getElementById("photoModal").style.display = "flex";
       };
 
       function loadFreudNotePad() {
