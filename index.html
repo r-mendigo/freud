@@ -1909,6 +1909,9 @@ Behavior rules:
           saved: Array.isArray(raw?.saved) ? raw.saved : [],
           session: Array.isArray(raw?.session) ? raw.session : [],
           archive: Array.isArray(raw?.archive) ? raw.archive : [],
+          emotionalPatterns: Array.isArray(raw?.emotionalPatterns)
+            ? raw.emotionalPatterns
+            : [],
         };
       }
 
@@ -2559,6 +2562,87 @@ Behavior rules:
         saveMemory();
       }
 
+      function detectFreudEmotionalPattern(text) {
+        const lower = String(text || "").toLowerCase();
+
+        if (
+          /(tired|sleepy|exhausted|drained|past \d+\s*am|late night|can't sleep|cant sleep)/i.test(
+            lower,
+          )
+        ) {
+          return "User often needs gentler, shorter support when tired or late at night.";
+        }
+
+        if (
+          /(anxious|worried|scared|overwhelmed|stressed|pressure)/i.test(lower)
+        ) {
+          return "User may need calm reassurance first before practical advice when stressed.";
+        }
+
+        if (
+          /(proud|happy|success|worked|fixed|beautiful|premium|accomplished)/i.test(
+            lower,
+          )
+        ) {
+          return "User appreciates shared celebration when progress or app improvements succeed.";
+        }
+
+        if (
+          /(code|patch|css|html|javascript|error|console|github|deploy)/i.test(
+            lower,
+          )
+        ) {
+          return "User prefers exact technical guidance with minimal noise during coding work.";
+        }
+
+        return "";
+      }
+
+      function rememberFreudEmotionalPattern(text) {
+        const pattern = detectFreudEmotionalPattern(text);
+        if (!pattern) return;
+
+        memory.emotionalPatterns = Array.isArray(memory.emotionalPatterns)
+          ? memory.emotionalPatterns
+          : [];
+
+        const existing = memory.emotionalPatterns.find(
+          (item) => item.text === pattern,
+        );
+
+        if (existing) {
+          existing.count = (existing.count || 1) + 1;
+          existing.updatedAt = Date.now();
+        } else {
+          memory.emotionalPatterns.push({
+            id: generateId(),
+            text: pattern,
+            count: 1,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          });
+        }
+
+        memory.emotionalPatterns = memory.emotionalPatterns
+          .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
+          .slice(0, 12);
+
+        saveMemory();
+      }
+
+      function getFreudMemoryEvolutionBlock() {
+        const patterns = Array.isArray(memory.emotionalPatterns)
+          ? memory.emotionalPatterns.slice(0, 5)
+          : [];
+
+        if (!patterns.length) return "";
+
+        return (
+          "Evolved emotional memory:\n" +
+          patterns.map((item) => `- ${item.text}`).join("\n")
+        );
+      }
+
       function cleanCriticalPhrases(reply) {
         return String(reply || "")
           .replace(/you'?re asking the same question again[:,]?\s*/gi, "")
@@ -3121,9 +3205,14 @@ Behavior rules:
         const relevantMemories = getRelevantMemories(currentUserText);
         const memoryBits = [
           `Core memory: ${JSON.stringify(memory.core)}`,
+          getFreudMemoryEvolutionBlock(),
           relevantMemories.length
             ? `Relevant recalled memories:\n- ${relevantMemories.join("\n- ")}`
             : "",
+          `Style reminder:
+        - For normal emotional conversation, avoid bullets unless the user asks for steps, a list, a checklist, or technical instructions.
+        - Use natural short paragraphs for casual replies.
+        - Use bullets only when structure genuinely helps.`,
         ]
           .filter(Boolean)
           .join("\n\n");
@@ -3272,7 +3361,7 @@ Behavior rules:
         return data?.choices?.[0]?.message?.content?.trim() || "";
       }
 
-      async function typeFreudReply(fullText) {
+      async function typeFreudReply(fullText, typingDelay = 70) {
         const message = {
           id: generateId(),
           role: "freud",
@@ -3304,17 +3393,69 @@ Behavior rules:
 
         contentWrap.innerHTML = formatMessage(fullText);
       }
+      function getFreudPacing(text, reply = "") {
+        const combined = `${text} ${reply}`.toLowerCase();
+
+        const isEmotional =
+          /(tired|sad|hurt|cry|alone|miss|love|anxious|worried|scared|overwhelmed|stressed|drained|exhausted)/i.test(
+            combined,
+          );
+        const isTechnical =
+          /(code|patch|css|html|javascript|error|console|github|deploy|function)/i.test(
+            combined,
+          );
+        const isShort = String(text || "").trim().length <= 30;
+
+        if (isTechnical) {
+          return {
+            statusDelay: 900,
+            bubbleDelay: 180,
+            preTypeDelay: 80,
+            typingDelay: 28,
+            statusText: "Freud is checking it carefully.",
+          };
+        }
+
+        if (isEmotional) {
+          return {
+            statusDelay: 900,
+            bubbleDelay: 280,
+            preTypeDelay: 520,
+            typingDelay: 62,
+            statusText: "Freud is staying with you.",
+          };
+        }
+
+        if (isShort) {
+          return {
+            statusDelay: 1200,
+            bubbleDelay: 260,
+            preTypeDelay: 120,
+            typingDelay: 38,
+            statusText: "Freud is here.",
+          };
+        }
+
+        return {
+          statusDelay: 1200,
+          bubbleDelay: 240,
+          preTypeDelay: 260,
+          typingDelay: 48,
+          statusText: "Freud is thinking.",
+        };
+      }
 
       async function runDeepReply(text) {
         let typingBubble = null;
+        let pacing = getFreudPacing(text);
 
         const statusTimer = setTimeout(() => {
-          status.textContent = "Freud is thinking...";
-        }, THINKING_STATUS_DELAY);
+          status.textContent = pacing.statusText;
+        }, pacing.statusDelay);
 
         const bubbleTimer = setTimeout(() => {
           typingBubble = addTypingBubble();
-        }, TYPING_BUBBLE_DELAY);
+        }, pacing.bubbleDelay);
 
         try {
           const replyRaw = await askGroq(buildRecentMessages(text));
@@ -3328,11 +3469,21 @@ Behavior rules:
             text,
           );
 
+          pacing = getFreudPacing(text, reply);
+
+          if (!typingBubble) {
+            typingBubble = addTypingBubble();
+          }
+
+          await new Promise((resolve) =>
+            setTimeout(resolve, pacing.preTypeDelay),
+          );
+
           if (typingBubble) {
             removeTemporaryBubble(typingBubble);
           }
 
-          await typeFreudReply(reply);
+          await typeFreudReply(reply, pacing.typingDelay);
           await speakReply(reply);
         } catch (e) {
           console.error(e);
@@ -3397,6 +3548,7 @@ Behavior rules:
         try {
           updateIdentityMemory(text);
           updateEmotionalState(text);
+          rememberFreudEmotionalPattern(text);
           addSessionNote(`User said: ${text}`, "conversation");
 
           const bridgeReply = handleNutriBridgeCommand(text);
