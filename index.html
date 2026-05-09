@@ -247,6 +247,24 @@
         min-height: auto;
         white-space: nowrap;
       }
+      .freud-weather-chip {
+        height: 36px;
+        min-width: 58px;
+        padding: 0 10px;
+        border-radius: 999px;
+
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+
+        background: rgba(212, 175, 55, 0.16);
+        border: 1px solid rgba(212, 175, 55, 0.38);
+        color: #f3df9b;
+
+        font-size: 0.82rem;
+        font-weight: 900;
+        white-space: nowrap;
+      }
 
       .modal {
         display: none;
@@ -1025,6 +1043,14 @@
       <button id="installBtn" class="install-btn" onclick="showInstallHelp()">
         📲
       </button>
+      <div
+        id="freudWeatherChip"
+        class="freud-weather-chip"
+        title="Dubai weather"
+      >
+        🌤️ --°
+      </div>
+
       <button id="freudSecurityBtn" class="install-btn" title="Security">
         🛡️
       </button>
@@ -1303,6 +1329,7 @@ I’ll be waiting for you there 💚`,
       const authOpenBtn = document.getElementById("authOpenBtn");
       const appShell = document.getElementById("appShell");
       const clearChatBtn = document.getElementById("clearChatBtn");
+      const freudWeatherChip = document.getElementById("freudWeatherChip");
 
       const freudSecurityBtn = document.getElementById("freudSecurityBtn");
       const freudSecuritySheet = document.getElementById("freudSecuritySheet");
@@ -1342,6 +1369,89 @@ I’ll be waiting for you there 💚`,
 
       function getFreudNotesStorageKey() {
         return `${FREUD_NOTES_BASE_KEY}_guest`;
+      }
+      function getFreudTimeContext() {
+        const now = new Date();
+
+        const fullDateTime = new Intl.DateTimeFormat("en-US", {
+          timeZone: "Asia/Dubai",
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        }).format(now);
+
+        const weekday = new Intl.DateTimeFormat("en-US", {
+          timeZone: "Asia/Dubai",
+          weekday: "long",
+        }).format(now);
+
+        const hour = Number(
+          new Intl.DateTimeFormat("en-GB", {
+            timeZone: "Asia/Dubai",
+            hour: "2-digit",
+            hour12: false,
+          }).format(now),
+        );
+
+        const isWeekend = weekday === "Saturday" || weekday === "Sunday";
+
+        let timeOfDay = "daytime";
+        if (hour >= 5 && hour < 12) timeOfDay = "morning";
+        if (hour >= 12 && hour < 17) timeOfDay = "afternoon";
+        if (hour >= 17 && hour < 22) timeOfDay = "evening";
+        if (hour >= 22 || hour < 5) timeOfDay = "late night";
+
+        return `
+Current real-world context:
+- User location context: Dubai, UAE.
+- Current Dubai date and time: ${fullDateTime}.
+- Today is ${weekday}.
+- It is currently ${timeOfDay}.
+- Weekend status: ${isWeekend ? "Weekend/rest day" : "Weekday"}.
+
+Behavior rules:
+- Treat the current date, day, and time above as true.
+- Do not say you are in the office, in meetings, or working if it is weekend, late night, or early morning unless the user clearly says that is happening.
+- If it is weekend, late night, or early morning, respond naturally as present, resting, thinking, or being here with the user.
+- Avoid inventing exact real-world activities. Keep daily-life answers believable for the current time.
+`.trim();
+      }
+
+      function getFreudWeatherIcon(code) {
+        if ([0].includes(code)) return "☀️";
+        if ([1, 2].includes(code)) return "🌤️";
+        if ([3].includes(code)) return "☁️";
+        if ([45, 48].includes(code)) return "🌫️";
+        if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code)) return "🌧️";
+        if ([95, 96, 99].includes(code)) return "⛈️";
+        return "🌤️";
+      }
+
+      async function updateFreudWeatherChip() {
+        if (!freudWeatherChip) return;
+
+        try {
+          const response = await fetch(
+            "https://api.open-meteo.com/v1/forecast?latitude=25.2048&longitude=55.2708&current=temperature_2m,weather_code&timezone=Asia%2FDubai",
+          );
+
+          if (!response.ok) throw new Error("Weather unavailable");
+
+          const data = await response.json();
+          const temp = Math.round(data?.current?.temperature_2m);
+          const code = Number(data?.current?.weather_code ?? 1);
+          const icon = getFreudWeatherIcon(code);
+
+          freudWeatherChip.textContent = `${icon} ${temp}°`;
+          freudWeatherChip.title = `Dubai weather · ${temp}°C`;
+        } catch {
+          freudWeatherChip.textContent = "🌤️ --°";
+          freudWeatherChip.title = "Dubai weather unavailable";
+        }
       }
       async function hashFreudPassword(password) {
         const encoded = new TextEncoder().encode(`Freud::${password}`);
@@ -3026,7 +3136,10 @@ I’ll be waiting for you there 💚`,
         return [
           {
             role: "system",
-            content: systemPrompt + (memoryBits ? `\n\n${memoryBits}` : ""),
+            content:
+              systemPrompt +
+              `\n\n${getFreudTimeContext()}` +
+              (memoryBits ? `\n\n${memoryBits}` : ""),
           },
           ...recent,
           { role: "user", content: currentUserText },
@@ -3696,6 +3809,8 @@ I’ll be waiting for you there 💚`,
       saveChatHistory();
 
       initAuth().then(() => {
+        updateFreudWeatherChip();
+        setInterval(updateFreudWeatherChip, 30 * 60 * 1000);
         setTimeout(() => {
           renderWelcomeIfNeeded();
           loadFreudNoteFromCloud();
