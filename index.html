@@ -1263,6 +1263,38 @@
           opacity: 1;
         }
       }
+      .message:has(.voice-note-bubble) {
+        padding: 8px 10px;
+        white-space: normal;
+      }
+
+      .voice-note-bubble {
+        min-width: 220px;
+        max-width: min(330px, 78vw);
+        padding: 10px 12px;
+        border-radius: 20px;
+        grid-template-columns: 38px 1fr 36px;
+      }
+
+      .voice-note-play {
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
+        min-height: 34px;
+      }
+
+      .voice-note-avatar {
+        width: 34px;
+        height: 34px;
+      }
+
+      .voice-wave {
+        height: 22px;
+      }
+
+      .voice-note-meta {
+        font-size: 0.72rem;
+      }
     </style>
   </head>
   <body>
@@ -2775,10 +2807,7 @@ Behavior rules:
       }
 
       function estimateVoiceDuration(text) {
-        const seconds = Math.max(
-          4,
-          Math.min(59, Math.round(String(text || "").length / 13)),
-        );
+        const seconds = estimateVoiceSeconds(text);
         return `0:${String(seconds).padStart(2, "0")}`;
       }
 
@@ -2804,6 +2833,12 @@ Behavior rules:
         );
       }
 
+      function estimateVoiceSeconds(text) {
+        return Math.max(
+          4,
+          Math.min(59, Math.round(String(text || "").length / 13)),
+        );
+      }
       function speakVoiceNoteText(text, bubble) {
         if (!("speechSynthesis" in window)) return;
 
@@ -2814,8 +2849,8 @@ Behavior rules:
 
         if (voice) utterance.voice = voice;
 
-        utterance.rate = 0.88;
-        utterance.pitch = 0.82;
+        utterance.rate = 0.82;
+        utterance.pitch = 0.72;
         utterance.volume = 1;
 
         bubble.classList.add("is-playing");
@@ -2823,15 +2858,19 @@ Behavior rules:
         const playBtn = bubble.querySelector(".voice-note-play");
         if (playBtn) playBtn.textContent = "Ⅱ";
 
-        utterance.onend = () => {
+        function resetVoiceNoteButton() {
           bubble.classList.remove("is-playing");
           if (playBtn) playBtn.textContent = "▶";
-        };
+        }
 
-        utterance.onerror = () => {
-          bubble.classList.remove("is-playing");
-          if (playBtn) playBtn.textContent = "▶";
-        };
+        utterance.onend = resetVoiceNoteButton;
+        utterance.onerror = resetVoiceNoteButton;
+
+        // iPhone fallback: sometimes onend does not fire cleanly
+        setTimeout(
+          resetVoiceNoteButton,
+          estimateVoiceSeconds(text) * 1000 + 800,
+        );
 
         window.speechSynthesis.speak(utterance);
       }
