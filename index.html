@@ -1582,7 +1582,21 @@ I’ll be waiting for you there 💚`,
         groqKey: "freud_groq_key",
       };
 
+      /* 🔒 STORAGE KEY LOCK
+   Never rename these permanent keys during upgrades.
+   They protect Freud notes + chat history across app patches.
+*/
+      const FREUD_PERMANENT_KEYS = {
+        chat: "freud_chat_guest",
+        notes: "freud_notes_local_v1_guest",
+        memory: "freud_memory_v5_guest",
+      };
+
       function getUserScopedKey(baseKey) {
+        if (baseKey === STORAGE_KEYS_BASE.chat)
+          return FREUD_PERMANENT_KEYS.chat;
+        if (baseKey === STORAGE_KEYS_BASE.memory)
+          return FREUD_PERMANENT_KEYS.memory;
         return `${baseKey}_guest`;
       }
 
@@ -1686,7 +1700,51 @@ I’ll be waiting for you there 💚`,
       const FREUD_NOTES_BASE_KEY = "freud_notes_local_v1";
 
       function getFreudNotesStorageKey() {
-        return `${FREUD_NOTES_BASE_KEY}_guest`;
+        return FREUD_PERMANENT_KEYS.notes;
+      }
+      function safeParseStorage(key, fallback = null) {
+        try {
+          return JSON.parse(localStorage.getItem(key) || "null") ?? fallback;
+        } catch {
+          return fallback;
+        }
+      }
+
+      function migrateFreudStorageOnce() {
+        const oldChatKeys = ["freud_chat", "freud_chat_local", "freud_chat_v1"];
+        const oldNoteKeys = [
+          "freud_notes_local_v1",
+          "freud_notes_guest",
+          "freud_notes",
+        ];
+
+        const currentChat = safeParseStorage(FREUD_PERMANENT_KEYS.chat, []);
+        if (!Array.isArray(currentChat) || currentChat.length === 0) {
+          for (const key of oldChatKeys) {
+            const oldChat = safeParseStorage(key, []);
+            if (Array.isArray(oldChat) && oldChat.length) {
+              localStorage.setItem(
+                FREUD_PERMANENT_KEYS.chat,
+                JSON.stringify(oldChat),
+              );
+              break;
+            }
+          }
+        }
+
+        const currentNote = safeParseStorage(FREUD_PERMANENT_KEYS.notes, null);
+        if (!currentNote) {
+          for (const key of oldNoteKeys) {
+            const oldNote = safeParseStorage(key, null);
+            if (oldNote && typeof oldNote === "object") {
+              localStorage.setItem(
+                FREUD_PERMANENT_KEYS.notes,
+                JSON.stringify(oldNote),
+              );
+              break;
+            }
+          }
+        }
       }
       function getFreudTimeContext() {
         const now = new Date();
@@ -2227,6 +2285,7 @@ Behavior rules:
 
       const systemPrompt = CORE_PERSONALITY;
 
+      migrateFreudStorageOnce();
       memory = loadStructuredMemory();
       chatHistory = normalizeChatHistory(
         JSON.parse(localStorage.getItem(getStorageKeys().chat) || "[]"),
