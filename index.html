@@ -9,6 +9,7 @@
 
     <link rel="icon" type="image/png" href="icon-1024.png" />
     <link rel="apple-touch-icon" href="icon-1024.png" />
+    <link rel="manifest" href="manifest.json" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta
       name="apple-mobile-web-app-status-bar-style"
@@ -4917,5 +4918,17 @@ Behavior rules:
       <button id="sheetCopyBtn">📋 Copy</button>
       <button id="sheetDeleteBtn" class="danger">🗑 Delete</button>
     </div>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("./service-worker.js")
+            .then(() => console.log("Freud service worker registered"))
+            .catch((err) =>
+              console.log("Service worker registration failed:", err),
+            );
+        });
+      }
+    </script>
   </body>
 </html>
