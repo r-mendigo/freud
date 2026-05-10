@@ -1,0 +1,16 @@
+{
+  "name": "Freud",
+  "short_name": "Freud",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#062f23",
+  "theme_color": "#062f23",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png"
+    }
+  ]
+}
