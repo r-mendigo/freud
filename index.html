@@ -1819,6 +1819,17 @@ Behavior rules:
         freudDisplayName.textContent = cleaned;
       }
 
+      window.showPhotoModal = function () {
+        const modal = document.getElementById("photoModal");
+        const modalImage = document.getElementById("modalImage");
+        const avatar = document.getElementById("freudAvatar");
+
+        if (!modal || !modalImage || !avatar) return;
+
+        modalImage.src = avatar.src;
+        modal.style.display = "flex";
+      };
+
       function promptFreudRename() {
         const current = localStorage.getItem(FREUD_NAME_KEY) || "Freud";
 
@@ -4790,7 +4801,10 @@ Behavior rules:
       });
 
       freudSecurityBtn.addEventListener("click", openFreudSecuritySheet);
-      freudDisplayName.addEventListener("click", promptFreudRename);
+      freudDisplayName.addEventListener("click", (event) => {
+        event.stopPropagation();
+        promptFreudRename();
+      });
       freudSecurityCancelBtn.addEventListener("click", closeFreudSecuritySheet);
 
       freudChangePasswordBtn.addEventListener("click", () => {
