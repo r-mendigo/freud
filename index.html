@@ -2685,10 +2685,27 @@ Behavior rules:
           .replace(/`([^`]+)`/g, "<code>$1</code>");
       }
 
+      function cleanListItemText(line) {
+        return String(line || "")
+          .replace(/^(?:[-*•]\s+){1,2}/, "")
+          .trim();
+      }
+
       function formatMessage(content) {
         if (!content) return "";
 
         content = content.replace(/<br\s*\/?>/gi, "\n");
+
+        // Fix AI inline bullets like:
+        // "something:* item * item"
+        content = content.replace(/:\*/g, ":\n\n* ");
+        const paragraphs = content
+          .split(/\n\s*\n/)
+          .flatMap((p) => p.split(/\n(?=\*\s)/));
+
+        content = content.replace(/:\s*\*/g, ":\n\n* ");
+        content = content.replace(/\s+\*\s+(?=[A-Z0-9])/g, "\n* ");
+
         content = content.replace(/\n{3,}/g, "\n\n");
 
         const parts = content.split(/```/);
@@ -2725,7 +2742,9 @@ Behavior rules:
               .map((line) => line.trim())
               .filter(Boolean);
 
-            const isBulletList = lines.every((line) => /^[-*]\s+/.test(line));
+            const isBulletList = lines.every((line) =>
+              /^(?:[-*•]\s+){1,2}/.test(line),
+            );
 
             const isNumberList = lines.every((line) =>
               /^\d+[.)]\s+/.test(line),
@@ -2738,8 +2757,7 @@ Behavior rules:
             if (isBulletList) {
               html += `<ul>${lines
                 .map(
-                  (line) =>
-                    `<li>${parseInline(line.replace(/^[-*]\s+/, ""))}</li>`,
+                  (line) => `<li>${parseInline(cleanListItemText(line))}</li>`,
                 )
                 .join("")}</ul>`;
             } else if (isNumberList) {
