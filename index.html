@@ -7,9 +7,9 @@
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
 
-    <link rel="icon" type="image/png" href="icon-1024.png" />
-    <link rel="apple-touch-icon" href="icon-1024.png" />
-    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" type="image/png" href="icon-1024.png?v=20260511" />
+    <link rel="apple-touch-icon" href="icon-1024.png?v=20260511" />
+    <link rel="manifest" href="manifest.json?v=20260511" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta
       name="apple-mobile-web-app-status-bar-style"
@@ -4695,7 +4695,9 @@ Behavior rules:
         const note = loadFreudNotePad();
 
         if (!note) {
-          freudNoteInput.value = "";
+          if (!freudNoteInput.value.trim()) {
+            freudNoteInput.value = "";
+          }
           freudNoteSavedAt.textContent = "Not saved yet";
           return;
         }
@@ -4952,13 +4954,8 @@ Behavior rules:
     </div>
     <script>
       if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-          navigator.serviceWorker
-            .register("./service-worker.js")
-            .then(() => console.log("Freud service worker registered"))
-            .catch((err) =>
-              console.log("Service worker registration failed:", err),
-            );
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          registrations.forEach((registration) => registration.unregister());
         });
       }
     </script>
